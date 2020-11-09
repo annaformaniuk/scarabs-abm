@@ -4,6 +4,8 @@ patches-own [
 
 turtles-own [
   has-ball?
+  heading-xcor
+  heading-ycor
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -46,7 +48,7 @@ end
 
 
 to go  ;; forever button
-  ;; add ants one at a time
+  ;; add beetles one at a time
   if count turtles < beetles-number [ create-beetle ]
 
   ask turtles [
@@ -58,25 +60,31 @@ to go  ;; forever button
 end
 
 to move  ;; turtle procedure
-  ;if not has-ball? [ create-ball  ]  ;; if not carrying food, look for it
-  ;if has-ball? [ move-towards-nest ]   ;; if carrying food head back to the nest
-  wander                                    ;; turn a small random amount and move forward
+  ;if not has-ball? [ create-ball  ]
+  ;if has-ball? [ move-towards-nest ]
+  ; ifelse empty? heading [set-heading]
+  wander
 end
 
 to create-beetle
   create-turtles 1 [
-    set size 2  ;; easier to see
+    set size 2
     set has-ball? false
+    set heading-xcor random-in-range -45 45
+    set heading-ycor random-in-range -45 45
   ]
 end
 
+
 to wander  ;; turtle procedure
-  rt random 40
-  lt random 40
-  if not can-move? 1 [ rt 180 ]
-  fd 1
+  ;show heading
+  facexy heading-xcor heading-ycor
+  if can-move? 1 [ fd 1 ]
 end
 
+to-report random-in-range [#low #high] ; random integer in given range
+   report #low + random(#high - #low + 1)
+end
 
 to-report source? ;; patch or turtle reporter
   report distancexy 0 0 < 5

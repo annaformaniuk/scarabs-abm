@@ -82,7 +82,7 @@ end
 
 to wander  ;; turtle procedure
   facexy heading-xcor heading-ycor
-  if (distancexy 0 0) < 30 [ fd 1 ]
+  if (distancexy 0 0) < 0 [ fd 1 ]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range

@@ -6,6 +6,8 @@ turtles-own [
   has-ball?
   heading-xcor
   heading-ycor
+  course-deviation
+  memory-level
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -21,27 +23,32 @@ end
 
 to setup-patches
   setup-source
-  ; setup-terrain
-  ; recolor-patches
+  setup-terrain
+  setup-color-patches
 end
 
 to setup-source
   ask patches with [ source? ] [
-    set pcolor brown
+    set pcolor red
   ]
 end
 
-;to setup-terrain
- ;; TODO random distribution
-;end
+to setup-terrain
+  ask patches with [not source?] [
+    ifelse random 5 = 0 [
+      set roughness random-float 1.0
+    ] [
+      set roughness random-float 0.3
+    ]
+  ]
+  diffuse roughness 0.5
+end
 
-;to recolor-patches [
- ; ask patches with [ not nest? ] [
-    ;; scale color to show roughness
-  ;  set pcolor scale-color green roughness 0.1 5
- ; ]
-;end
-
+to setup-color-patches
+  ask patches with [not source?] [
+    set pcolor scale-color brown roughness 1.0 0.0
+  ]
+end
 ;;;;;;;;;;;;;;;;;;;;;
 ;;; Go procedures ;;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -53,7 +60,6 @@ to go  ;; forever button
 
   ask turtles [
     move
-    ;recolor
   ]
 
   tick
@@ -82,7 +88,16 @@ end
 
 to wander  ;; turtle procedure
   facexy heading-xcor heading-ycor
-  if (distancexy 0 0) < 0 [ fd 1 ]
+  if (distancexy 0 0) < 30 [
+
+    ask patch-ahead 1 [
+      let chance 1.0 - roughness
+      set chance round (chance * 10)
+      if random 10 <= chance [
+      fd 1
+      ]
+    ]
+  ]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range
@@ -119,8 +134,8 @@ GRAPHICS-WINDOW
 50
 -50
 50
-0
-0
+1
+1
 1
 ticks
 1.0

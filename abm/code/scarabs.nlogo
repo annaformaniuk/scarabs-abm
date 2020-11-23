@@ -4,8 +4,7 @@ patches-own [
 
 turtles-own [
   has-ball?
-  heading-xcor
-  heading-ycor
+  heading-degrees
   course-deviation
   memory-level
 ]
@@ -59,6 +58,7 @@ to go  ;; forever button
   if count turtles < beetles-number [ create-beetle ]
 
   ask turtles [
+    set size 3
     move
   ]
 
@@ -76,37 +76,23 @@ to create-beetle
   create-turtles 1 [
     set size 2
     set has-ball? false
-    ifelse random 2 = 0 [
-      set heading-xcor random-in-range 0 100
-      set heading-ycor random-in-range 45 100
-    ] [
-      set heading-xcor random-in-range 45 100
-      set heading-ycor random-in-range 0 100 ]
+    set heading-degrees random 360
   ]
 end
 
 
 to wander  ;; turtle procedure
-  facexy heading-xcor heading-ycor
-  if (distancexy 0 0) < 30 [
+  set heading heading-degrees
+  if (distancexy 0 0) < 40 [
     let chance 0.0
     ask patch-ahead 1 [
-      set chance 1.0 - roughness
+      set chance 1.0 - roughness - 0.2
       set chance round (chance * 10)
     ]
-    if random 10 <= chance [
+    if random 10 < chance [
         fd 1
       ]
   ]
-end
-
-to-report random-in-range [#low #high] ; random integer in given range
-  ifelse random 2 = 0 [
-    report #low + random(#high - #low + 1)
-  ] [
-  report (-1)*(#low + random(#high - #low + 1))
-  ]
-
 end
 
 to-report source? ;; patch or turtle reporter
@@ -114,10 +100,10 @@ to-report source? ;; patch or turtle reporter
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-723
-524
+587
+30
+1101
+545
 -1
 -1
 5.0
@@ -149,7 +135,7 @@ beetles-number
 beetles-number
 1
 100
-52.0
+15.0
 1
 1
 NIL

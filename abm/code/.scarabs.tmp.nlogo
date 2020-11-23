@@ -67,8 +67,7 @@ end
 
 to move  ;; turtle procedure
   ;if not has-ball? [ create-ball  ]
-  ;if has-ball? [ move-towards-nest ]
-  ; ifelse empty? heading [set-heading]
+  if heading-degrees = 0 [ establish-heading ]
   wander
 end
 
@@ -76,8 +75,55 @@ to create-beetle
   create-turtles 1 [
     set size 2
     set has-ball? false
-    set heading-degrees random 360
   ]
+end
+
+to establish-heading
+  let visible-turtles turtles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
+
+  ifelse count visible-turtles >= 1
+  [ show count visible-turtles
+    ifelse count visible-turtles = 1
+    [let new-heading 0
+      ask visible-turtles [
+        ifelse heading-degrees > 180 [
+        set new-heading heading-degrees - 180] [
+        set new-heading heading-degrees + 180]
+      ]
+      set heading-degrees new-heading ; setting new heading opposite to the existing one
+    ]
+    [ let headings-list []  ; initialize empty list of headings in the range
+      ask visible-turtles [
+         set headings-list lput heading-degrees headings-list  ; append headings
+      ]
+      let sorted-list sort headings-list  ; sort them for calculations
+
+      ; initial values for iteration
+      let n 0
+      let difference 0
+      let chosen-headings [0 359]
+      let added-value ((item 0 sorted-list) + 360)
+      set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
+      show sorted-list
+
+      #
+      while [ n < (length sorted-list) - 1 ] [
+        let m n + 1
+        let new-difference (item m sorted-list - item n sorted-list)
+        if new-difference > difference [
+          set difference new-difference
+          set chosen-headings (list item n sorted-list item m sorted-list)
+        ]
+        set n n + 1
+      ]
+
+      set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2)
+
+      show heading-degrees
+
+    ]
+  ]
+  [set heading-degrees random 360]
 end
 
 
@@ -94,8 +140,6 @@ to wander  ;; turtle procedure
       ]
   ]
 end
-
-
 
 to-report source? ;; patch or turtle reporter
   report distancexy 0 0 < 5
@@ -137,7 +181,7 @@ beetles-number
 beetles-number
 1
 100
-15.0
+16.0
 1
 1
 NIL

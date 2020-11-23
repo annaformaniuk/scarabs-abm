@@ -4,6 +4,9 @@ patches-own [
 
 turtles-own [
   has-ball?
+  heading-degrees
+  course-deviation
+  memory-level
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -19,64 +22,78 @@ end
 
 to setup-patches
   setup-source
-  ; setup-terrain
-  ; recolor-patches
+  setup-terrain
+  setup-color-patches
 end
 
 to setup-source
   ask patches with [ source? ] [
-    set pcolor brown
+    set pcolor red
   ]
 end
 
-;to setup-terrain
- ;; TODO random distribution
-;end
+to setup-terrain
+  ask patches with [not source?] [
+    ifelse random 5 = 0 [
+      set roughness random-float 1.0
+    ] [
+      set roughness random-float 0.3
+    ]
+  ]
+  diffuse roughness 0.5
+end
 
-;to recolor-patches [
- ; ask patches with [ not nest? ] [
-    ;; scale color to show roughness
-  ;  set pcolor scale-color green roughness 0.1 5
- ; ]
-;end
-
+to setup-color-patches
+  ask patches with [not source?] [
+    set pcolor scale-color brown roughness 1.0 0.0
+  ]
+end
 ;;;;;;;;;;;;;;;;;;;;;
 ;;; Go procedures ;;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 
 to go  ;; forever button
-  ;; add ants one at a time
+  ;; add beetles one at a time
   if count turtles < beetles-number [ create-beetle ]
 
   ask turtles [
+    set size 3
     move
-    ;recolor
   ]
 
   tick
 end
 
 to move  ;; turtle procedure
-  ;if not has-ball? [ create-ball  ]  ;; if not carrying food, look for it
-  ;if has-ball? [ move-towards-nest ]   ;; if carrying food head back to the nest
-  wander                                    ;; turn a small random amount and move forward
+  ;if not has-ball? [ create-ball  ]
+  ;if has-ball? [ move-towards-nest ]
+  ; ifelse empty? heading [set-heading]
+  wander
 end
 
 to create-beetle
   create-turtles 1 [
-    set size 2  ;; easier to see
+    set size 2
     set has-ball? false
+    set heading-degrees random 360
   ]
 end
 
-to wander  ;; turtle procedure
-  rt random 40
-  lt random 40
-  if not can-move? 1 [ rt 180 ]
-  fd 1
-end
 
+to wander  ;; turtle procedure
+  set heading heading-degrees
+  if (distancexy 0 0) < 40 [
+    let chance 0.0
+    ask patch-ahead 1 [
+      set chance 1.0 - roughness - 0.2
+      set chance round (chance * 10)
+    ]
+    if random 10 < chance [
+        fd 1
+      ]
+  ]
+end
 
 
 
@@ -85,10 +102,10 @@ to-report source? ;; patch or turtle reporter
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-673
-474
+587
+30
+1101
+545
 -1
 -1
 5.0
@@ -98,18 +115,18 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
-1
--45
-45
--45
-45
 0
 0
+1
+-50
+50
+-50
+50
+1
+1
 1
 ticks
-30.0
+1.0
 
 SLIDER
 20
@@ -120,7 +137,7 @@ beetles-number
 beetles-number
 1
 100
-25.0
+15.0
 1
 1
 NIL

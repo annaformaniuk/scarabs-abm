@@ -7,9 +7,15 @@ patches-own [
 
 beetles-own [
   has-ball?
+  ball-id
   heading-degrees
+  ball-shaping-counter
   course-deviation
   memory-level
+]
+
+balls-own [
+  ball-who
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,7 +24,8 @@ beetles-own [
 
 to setup
   clear-all
-  set-default-shape  "bug"
+  set-default-shape beetles "bug"
+  set-default-shape balls "circle"
   setup-patches
   reset-ticks
 end
@@ -51,17 +58,26 @@ to setup-color-patches
     set pcolor scale-color brown roughness 1.0 0.0
   ]
 end
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;;; Go procedures ;;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 
 to go  ;; forever button
+  let beetles-at-source
+    count beetles-on patches with [
+      (pxcor >= -10 and pxcor <= 10) and (pycor <= 10  and pycor >= -10)
+  ]
+
   ;; add beetles one at a time
-  if count beetles < beetles-number [ create-beetle ]
+  if (count beetles < beetles-number) and (beetles-at-source <= 3) [
+    if random 10 < 1 [
+        create-beetle
+      ]
+    ]
 
   ask beetles [
-    set size 3
     move
   ]
 
@@ -69,34 +85,58 @@ to go  ;; forever button
 end
 
 to move  ;; turtle procedure
-  ;if not has-ball? [ create-ball  ]
-  if heading-degrees = 0 [ establish-heading ]
-  wander
+  ifelse not has-ball? [ roll-ball ] [
+    if heading-degrees = 0 [ establish-heading ]
+    wander
+  ]
+
 end
 
 to create-beetle
   create-beetles 1 [
-    set size 2
+    set size 5
     set has-ball? false
+    set color blue
+    set ball-shaping-counter 0
+  ]
+end
+
+to roll-ball
+  ifelse ball-shaping-counter < 30 [
+    set ball-shaping-counter ball-shaping-counter + 1
+  ] [
+    if random 10 < 2 [
+      let temp -1
+      hatch-balls 1 [
+        set color magenta
+
+        set ball-who who
+        set temp who
+      ]
+      set has-ball? true
+      set ball-id temp
+     ]
   ]
 end
 
 to establish-heading
-  let visible-turtles beetles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
+  let visible-beetles beetles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
 
-  ifelse count visible-turtles >= 1
-  [ show count visible-turtles
-    ifelse count visible-turtles = 1
+  ifelse count visible-beetles >= 1
+  [ show count visible-beetles
+    ifelse count visible-beetles = 1
     [let new-heading 0
-      ask visible-turtles [
+      ask visible-beetles [
         ifelse heading-degrees > 180 [
         set new-heading heading-degrees - 180] [
         set new-heading heading-degrees + 180]
       ]
-      set heading-degrees new-heading ; setting new heading opposite to the existing one
+      let noise random-in-range -20 20
+
+      set heading-degrees new-heading + noise ; setting new heading opposite to the existing one
     ]
     [ let headings-list []  ; initialize empty list of headings in the range
-      ask visible-turtles [
+      ask visible-beetles [
          set headings-list lput heading-degrees headings-list  ; append headings
       ]
       let sorted-list sort headings-list  ; sort them for calculations
@@ -120,7 +160,9 @@ to establish-heading
         set n n + 1
       ]
 
-      set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2)
+      let noise random-in-range -20 20
+
+      set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise
 
       show heading-degrees
     ]
@@ -140,8 +182,23 @@ to wander  ;; turtle procedure
       set chance round (chance * 10)
     ]
     if random 10 < chance [
+      fd 1
+      let beetles-ball ball-id
+      let beetles-heading heading-degrees
+      ask balls with [ball-who = beetles-ball] [
+        set heading beetles-heading
         fd 1
       ]
+
+     ]
+  ]
+end
+
+to-report random-in-range [#low #high] ; random integer in given range
+  ifelse random 2 = 0 [
+    report #low + random(#high - #low + 1)
+  ] [
+  report (-1)*(#low + random(#high - #low + 1))
   ]
 end
 
@@ -185,7 +242,7 @@ beetles-number
 beetles-number
 1
 100
-16.0
+34.0
 1
 1
 NIL

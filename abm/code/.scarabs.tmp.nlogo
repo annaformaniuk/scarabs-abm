@@ -1,8 +1,11 @@
+breed [beetles beetle]
+breed [balls ball]
+
 patches-own [
   roughness            ;; degree of how rough the terrain is
 ]
 
-turtles-own [
+beetles-own [
   has-ball?
   heading-degrees
   course-deviation
@@ -15,7 +18,7 @@ turtles-own [
 
 to setup
   clear-all
-  set-default-shape turtles "bug"
+  set-default-shape  "bug"
   setup-patches
   reset-ticks
 end
@@ -55,9 +58,9 @@ end
 
 to go  ;; forever button
   ;; add beetles one at a time
-  if count turtles < beetles-number [ create-beetle ]
+  if count beetles < beetles-number [ create-beetle ]
 
-  ask turtles [
+  ask beetles [
     set size 3
     move
   ]
@@ -72,14 +75,14 @@ to move  ;; turtle procedure
 end
 
 to create-beetle
-  create-turtles 1 [
+  create-beetles 1 [
     set size 2
     set has-ball? false
   ]
 end
 
 to establish-heading
-  let visible-turtles turtles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
+  let visible-turtles beetles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
 
   ifelse count visible-turtles >= 1
   [ show count visible-turtles
@@ -98,7 +101,7 @@ to establish-heading
       ]
       let sorted-list sort headings-list  ; sort them for calculations
 
-      ; initial values for iteration
+      ;; initial values for iteration
       let n 0
       let difference 0
       let chosen-headings [0 359]
@@ -106,7 +109,7 @@ to establish-heading
       set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
       show sorted-list
 
-      #
+      ;; iterate through the headings to find the larges difference angle between them
       while [ n < (length sorted-list) - 1 ] [
         let m n + 1
         let new-difference (item m sorted-list - item n sorted-list)
@@ -120,10 +123,11 @@ to establish-heading
       set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2)
 
       show heading-degrees
-
     ]
   ]
-  [set heading-degrees random 360]
+
+  [set heading-degrees random 360]  ; random heading for the only beetle in view
+
 end
 
 
@@ -148,8 +152,8 @@ end
 GRAPHICS-WINDOW
 587
 30
-1101
-545
+1100
+544
 -1
 -1
 5.0

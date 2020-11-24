@@ -1,8 +1,11 @@
+breed [beetles beetle]
+breed [balls ball]
+
 patches-own [
   roughness            ;; degree of how rough the terrain is
 ]
 
-turtles-own [
+beetles-own [
   has-ball?
   heading-degrees
   course-deviation
@@ -15,7 +18,7 @@ turtles-own [
 
 to setup
   clear-all
-  set-default-shape turtles "bug"
+  set-default-shape beetles "bug"
   setup-patches
   reset-ticks
 end
@@ -55,9 +58,9 @@ end
 
 to go  ;; forever button
   ;; add beetles one at a time
-  if count turtles < beetles-number [ create-beetle ]
+  if count beetles < beetles-number [ create-beetle ]
 
-  ask turtles [
+  ask beetles [
     set size 3
     move
   ]
@@ -72,20 +75,20 @@ to move  ;; turtle procedure
 end
 
 to create-beetle
-  create-turtles 1 [
+  create-beetles 1 [
     set size 2
     set has-ball? false
   ]
 end
 
 to establish-heading
-  let visible-turtles turtles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
+  let visible-beetles beetles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
 
-  ifelse count visible-turtles >= 1
-  [ show count visible-turtles
-    ifelse count visible-turtles = 1
+  ifelse count visible-beetles >= 1
+  [ show count visible-beetles
+    ifelse count visible-beetles = 1
     [let new-heading 0
-      ask visible-turtles [
+      ask visible-beetles [
         ifelse heading-degrees > 180 [
         set new-heading heading-degrees - 180] [
         set new-heading heading-degrees + 180]
@@ -93,7 +96,7 @@ to establish-heading
       set heading-degrees new-heading ; setting new heading opposite to the existing one
     ]
     [ let headings-list []  ; initialize empty list of headings in the range
-      ask visible-turtles [
+      ask visible-beetles [
          set headings-list lput heading-degrees headings-list  ; append headings
       ]
       let sorted-list sort headings-list  ; sort them for calculations
@@ -149,8 +152,8 @@ end
 GRAPHICS-WINDOW
 587
 30
-1101
-545
+1100
+544
 -1
 -1
 5.0

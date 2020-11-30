@@ -17,6 +17,8 @@ beetles-own [
   dance-counter
   course-deviation
   memory-level
+  last-encounter
+  nested
 ]
 
 balls-own [
@@ -46,7 +48,6 @@ to setup-source
   ask patches with [ source? ] [
     set pcolor red
   ]
-
 end
 
 to setup-terrain
@@ -100,11 +101,13 @@ end
 
 to create-beetle
   create-beetles 1 [
-    set size 5
+    set size 10
     set has-ball? false
     set color blue
     set ball-shaping-counter 0
     set dance-counter 0
+    set last-encounter 0
+    set nested false
   ]
 
 end
@@ -121,7 +124,7 @@ to roll-ball
       let temp -1
       hatch-balls 1 [
         set color magenta
-        set size 2
+        set size 5
         set ball-who who
         set temp who
       ]
@@ -181,7 +184,7 @@ to establish-heading
 
         set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise
 
-        show heading-degrees
+        ;show heading-degrees
       ]
     ]
 
@@ -192,8 +195,16 @@ end
 
 
 to wander  ;; turtle procedure
+  let visible-beetles beetles in-radius 30
+  show visible-beetles
+  ifelse count visible-beetles > 1
+  [set last-encounter 0]
+  [set last-encounter last-encounter + 1]
+
+  show last-encounter
+
   set heading heading-degrees
-  if (distancexy 0 0) < 40 [
+  if ((distancexy 0 0) < 50) or (last-encounter < 30)( [
     let chance 0.0
     ask patch-ahead 1 [
       set chance 1.0 - roughness - 0.2
@@ -227,11 +238,11 @@ end
 GRAPHICS-WINDOW
 587
 30
-1100
-544
+995
+439
 -1
 -1
-5.0
+0.8
 1
 10
 1
@@ -241,10 +252,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--50
-50
--50
-50
+-250
+250
+-250
+250
 1
 1
 1

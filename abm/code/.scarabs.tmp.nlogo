@@ -1,3 +1,7 @@
+extensions [
+  py
+]
+
 breed [beetles beetle]
 breed [balls ball]
 
@@ -10,6 +14,7 @@ beetles-own [
   ball-id
   heading-degrees
   ball-shaping-counter
+  dance-counter
   course-deviation
   memory-level
 ]
@@ -28,6 +33,7 @@ to setup
   set-default-shape balls "circle"
   setup-patches
   reset-ticks
+  py:setup py:python
 end
 
 to setup-patches
@@ -40,6 +46,7 @@ to setup-source
   ask patches with [ source? ] [
     set pcolor red
   ]
+
 end
 
 to setup-terrain
@@ -86,10 +93,9 @@ end
 
 to move  ;; turtle procedure
   ifelse not has-ball? [ roll-ball ] [
-    if heading-degrees = 0 [ establish-heading ]
-    wander
+    ifelse heading-degrees = 0 [ establish-heading ]
+    [ wander ]
   ]
-
 end
 
 to create-beetle
@@ -98,78 +104,90 @@ to create-beetle
     set has-ball? false
     set color blue
     set ball-shaping-counter 0
+    set dance-counter 0
   ]
+
 end
 
 to roll-ball
   ifelse ball-shaping-counter < 30 [
+    if pcolor = red [
+      set heading random 360
+      fd 1
+    ]
     set ball-shaping-counter ball-shaping-counter + 1
   ] [
     if random 10 < 2 [
       let temp -1
       hatch-balls 1 [
         set color magenta
-
+        set size 2
         set ball-who who
         set temp who
       ]
       set has-ball? true
       set ball-id temp
+      set ball-shaping-counter 0
      ]
   ]
 end
 
 to establish-heading
-  let visible-beetles beetles in-radius 10 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
+  ifelse dance-counter < 20 [
+    set heading heading + 20
+    set dance-counter dance-counter + 1
+  ] [
+    let visible-beetles beetles in-radius 50 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
 
-  ifelse count visible-beetles >= 1
-  [ show count visible-beetles
-    ifelse count visible-beetles = 1
-    [let new-heading 0
-      ask visible-beetles [
-        ifelse heading-degrees > 180 [
-        set new-heading heading-degrees - 180] [
-        set new-heading heading-degrees + 180]
-      ]
-      let noise random-in-range -20 20
-
-      set heading-degrees new-heading + noise ; setting new heading opposite to the existing one
-    ]
-    [ let headings-list []  ; initialize empty list of headings in the range
-      ask visible-beetles [
-         set headings-list lput heading-degrees headings-list  ; append headings
-      ]
-      let sorted-list sort headings-list  ; sort them for calculations
-
-      ;; initial values for iteration
-      let n 0
-      let difference 0
-      let chosen-headings [0 359]
-      let added-value ((item 0 sorted-list) + 360)
-      set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
-      show sorted-list
-
-      ;; iterate through the headings to find the larges difference angle between them
-      while [ n < (length sorted-list) - 1 ] [
-        let m n + 1
-        let new-difference (item m sorted-list - item n sorted-list)
-        if new-difference > difference [
-          set difference new-difference
-          set chosen-headings (list item n sorted-list item m sorted-list)
+    ifelse count visible-beetles >= 1
+    [ show count visible-beetles
+      ifelse count visible-beetles = 1
+      [let new-heading 0
+        ask visible-beetles [
+          ifelse heading-degrees > 180 [
+            set new-heading heading-degrees - 180] [
+            set new-heading heading-degrees + 180]
         ]
-        set n n + 1
+        let noise random-in-range -20 20
+
+        set heading-degrees new-heading + noise ; setting new heading opposite to the existing one
       ]
+      [ let headings-list []  ; initialize empty list of headings in the range
+        ask visible-beetles [
+          set headings-list lput heading-degrees headings-list  ; append headings
+        ]
+        let sorted-list sort headings-list  ; sort them for calculations
 
-      let noise random-in-range -20 20
+        ;; initial values for iteration
+        let n 0
+        let difference 0
+        let chosen-headings [0 359]
+        let added-value ((item 0 sorted-list) + 360)
+        set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
+        show sorted-list
 
-      set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise
+        ;; iterate through the headings to find the larges difference angle between them
+        while [ n < (length sorted-list) - 1 ] [
+          let m n + 1
+          let new-difference (item m sorted-list - item n sorted-list)
+          if new-difference > difference [
+            set difference new-difference
+            set chosen-headings (list item n sorted-list item m sorted-list)
+          ]
+          set n n + 1
+        ]
 
-      show heading-degrees
+        let noise random-in-range -20 20
+
+        set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise
+
+        show heading-degrees
+      ]
     ]
+
+    [set heading-degrees random 360]  ; random heading for the only beetle in view
+    set heading 0
   ]
-
-  [set heading-degrees random 360]  ; random heading for the only beetle in view
-
 end
 
 
@@ -203,7 +221,7 @@ to-report random-in-range [#low #high] ; random integer in given range
 end
 
 to-report source? ;; patch or turtle reporter
-  report distancexy 0 0 < 5
+  report distancexy 0 0 < 7
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

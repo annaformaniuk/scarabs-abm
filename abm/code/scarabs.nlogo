@@ -2,6 +2,8 @@ extensions [
   py
 ]
 
+globals [ patch-length ]
+
 breed [beetles beetle]
 breed [balls ball]
 
@@ -20,6 +22,7 @@ beetles-own [
   last-encounter
   encounter-reset-heading
   nested
+  walked-distance
 ]
 
 balls-own [
@@ -36,13 +39,15 @@ to setup
   set-default-shape balls "circle"
   setup-patches
   reset-ticks
-  py:setup py:python
+  set patch-length 10 ; one patch equals 10 centimeters maybe
+  ;py:setup py:python
 end
 
 to setup-patches
   setup-source
   setup-terrain
   setup-color-patches
+  setup-obstacles
 end
 
 to setup-source
@@ -110,6 +115,7 @@ to create-beetle
     set last-encounter 0
     set nested false
     set encounter-reset-heading 30
+    set walked-distance 0
   ]
 
 end
@@ -145,7 +151,7 @@ to establish-heading
     let visible-beetles beetles in-radius 50 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
 
     ifelse count visible-beetles >= 1
-    [ show count visible-beetles
+    [ ;show count visible-beetles
       ifelse count visible-beetles = 1
       [let new-heading 0
         ask visible-beetles [
@@ -169,7 +175,7 @@ to establish-heading
         let chosen-headings [0 359]
         let added-value ((item 0 sorted-list) + 360)
         set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
-        show sorted-list
+        ;show sorted-list
 
         ;; iterate through the headings to find the larges difference angle between them
         while [ n < (length sorted-list) - 1 ] [
@@ -206,10 +212,10 @@ to wander  ;; turtle procedure
     if (distancexy 0 0) > 50 [
       let minimum-diff 359
       let old-heading heading-degrees
-      show old-heading
+      ;show old-heading
       let other-heading 0
       ask visible-beetles [
-        show heading-degrees
+        ;show heading-degrees
         let new-diff heading-degrees - old-heading
         if (abs (new-diff)) < minimum-diff [
           set minimum-diff new-diff
@@ -224,31 +230,41 @@ to wander  ;; turtle procedure
         set encounter-reset-heading 0
       ]
 
-      show heading-degrees
+      ;show heading-degrees
     ]
   ]
   [set last-encounter last-encounter + 1]
 
-  show last-encounter
+  ;show last-encounter
 
   ifelse (((distancexy 0 0) < 50) or (last-encounter < 30)) and nested = false [
-    let chance 0.0
-    ask patch-ahead 1 [
+    ifelse pcolor = black [
+    set nested true
+    ] [
+      let chance 0.0
+      ask patch-ahead 1 [
       set chance 1.0 - roughness - 0.2
       set chance round (chance * 10)
     ]
     if random 10 < chance [
       fd 1
+      set walked-distance walked-distance + patch-length
+      let random-color one-of base-colors
+      ;set-plot-pen-color random-color plotxy who walked-distance
       let beetles-ball ball-id
       let beetles-heading heading-degrees
       ask balls with [ball-who = beetles-ball] [
         set heading beetles-heading
-        show heading
+        ;show heading
         fd 1
       ]
-
      ]
-  ] [set nested true]
+    ]
+
+  ] [
+    set nested true
+  print("Total distance walked: ")
+ show walked-distance ]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range
@@ -338,6 +354,24 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+27
+189
+227
+339
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"pen-0" 1.0 0 -7500403 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?

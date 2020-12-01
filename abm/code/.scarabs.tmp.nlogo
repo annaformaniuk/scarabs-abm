@@ -2,6 +2,8 @@ extensions [
   py
 ]
 
+globals [ patch-length ]
+
 breed [beetles beetle]
 breed [balls ball]
 
@@ -20,6 +22,7 @@ beetles-own [
   last-encounter
   encounter-reset-heading
   nested
+  walked-distance
 ]
 
 balls-own [
@@ -36,13 +39,15 @@ to setup
   set-default-shape balls "circle"
   setup-patches
   reset-ticks
-  py:setup py:python
+  set patch-length 10 ; one patch equals 10 centimeters maybe
+  ;py:setup py:python
 end
 
 to setup-patches
   setup-source
   setup-terrain
   setup-color-patches
+  setup-obstacles
 end
 
 to setup-source
@@ -58,8 +63,22 @@ to setup-terrain
     ] [
       set roughness random-float 0.3
     ]
+    if random-float 1.0 < 0.04 [ set pcolor black ]
   ]
   diffuse roughness 0.5
+end
+
+to setup-obstacles
+  rectanglebase 50 60 60 10 black
+  ask patches with [pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 90]
+  [ set pcolor black ]
+end
+
+to rectanglebase [x y w l c]
+  ask patches with
+  [ w >= pxcor and pxcor >= x
+    and
+    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c ]
 end
 
 to setup-color-patches
@@ -110,6 +129,7 @@ to create-beetle
     set last-encounter 0
     set nested false
     set encounter-reset-heading 30
+    set walked-distance 0
   ]
 
 end
@@ -206,7 +226,6 @@ to wander  ;; turtle procedure
     if (distancexy 0 0) > 50 [
       let minimum-diff 359
       let old-heading heading-degrees
-
       show old-heading
       let other-heading 0
       ask visible-beetles [
@@ -225,8 +244,6 @@ to wander  ;; turtle procedure
         set encounter-reset-heading 0
       ]
 
-
-      ;set heading-degrees (heading-degrees - (minimum-diff / 2))
       show heading-degrees
     ]
   ]
@@ -235,23 +252,33 @@ to wander  ;; turtle procedure
   show last-encounter
 
   ifelse (((distancexy 0 0) < 50) or (last-encounter < 30)) and nested = false [
-    let chance 0.0
-    ask patch-ahead 1 [
+    ifelse pcolor = black [
+    set nested true
+    ] [
+      let chance 0.0
+      ask patch-ahead 1 [
       set chance 1.0 - roughness - 0.2
       set chance round (chance * 10)
     ]
     if random 10 < chance [
       fd 1
+      set walked-distance walked-distance + patch-length
+      let random-color one-of base-colors
+      ;set-plot-pen-color random-color plotxy who walked-distance
       let beetles-ball ball-id
       let beetles-heading heading-degrees
       ask balls with [ball-who = beetles-ball] [
         set heading beetles-heading
-        show heading
+        'show heading
         fd 1
       ]
-
      ]
-  ] [set nested true]
+    ]
+
+  ] [
+    set nested true
+  print("Total distance walked: ")
+ show walked-distance ]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range
@@ -341,6 +368,24 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+27
+189
+227
+339
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"pen-0" 1.0 0 -7500403 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?

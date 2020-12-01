@@ -18,6 +18,7 @@ beetles-own [
   course-deviation
   memory-level
   last-encounter
+  encounter-reset-heading
   nested
 ]
 
@@ -108,6 +109,7 @@ to create-beetle
     set dance-counter 0
     set last-encounter 0
     set nested false
+    set encounter-reset-heading 30
   ]
 
 end
@@ -148,8 +150,8 @@ to establish-heading
       [let new-heading 0
         ask visible-beetles [
           ifelse heading-degrees > 180 [
-            set new-heading heading-degrees - 180] [
-            set new-heading heading-degrees + 180]
+            set new-heading ((heading-degrees - 180) mod 360)] [
+            set new-heading ((heading-degrees + 180) mod 360)]
         ]
         let noise random-in-range -20 20
 
@@ -182,7 +184,7 @@ to establish-heading
 
         let noise random-in-range -20 20
 
-        set heading-degrees int ((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise
+        set heading-degrees int ((((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise) mod 360)
 
         ;show heading-degrees
       ]
@@ -195,15 +197,40 @@ end
 
 
 to wander  ;; turtle procedure
-  let visible-beetles beetles in-radius 30
-  show visible-beetles
-  ifelse count visible-beetles > 1
-  [set last-encounter 0]
+  set heading heading-degrees
+  let visible-beetles other beetles in-radius 30
+  ifelse count visible-beetles > 0
+  [
+    set last-encounter 0
+    set encounter-reset-heading encounter-reset-heading + 1
+    if (distancexy 0 0) > 50 [
+      let minimum-diff 359
+      let old-heading heading-degrees
+      show old-heading
+      let other-heading 0
+      ask visible-beetles [
+        show heading-degrees
+        let new-diff heading-degrees - old-heading
+        if (abs (new-diff)) < minimum-diff [
+          set minimum-diff new-diff
+          set other-heading heading-degrees  ]
+      ]
+      if minimum-diff < 30 and encounter-reset-heading >= 30 [
+        ifelse other-heading > heading-degrees [
+        set heading-degrees heading-degrees - 15
+        ] [
+          set heading-degrees heading-degrees + 15
+        ]
+        set encounter-reset-heading 0
+      ]
+
+      show heading-degrees
+    ]
+  ]
   [set last-encounter last-encounter + 1]
 
   show last-encounter
 
-  set heading heading-degrees
   ifelse (((distancexy 0 0) < 50) or (last-encounter < 30)) and nested = false [
     let chance 0.0
     ask patch-ahead 1 [
@@ -216,6 +243,7 @@ to wander  ;; turtle procedure
       let beetles-heading heading-degrees
       ask balls with [ball-who = beetles-ball] [
         set heading beetles-heading
+        show heading
         fd 1
       ]
 
@@ -238,8 +266,8 @@ end
 GRAPHICS-WINDOW
 587
 30
-995
-439
+1088
+540
 -1
 -1
 0.8

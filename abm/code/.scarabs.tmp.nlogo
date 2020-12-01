@@ -23,6 +23,7 @@ beetles-own [
   encounter-reset-heading
   nested
   walked-distance
+  secondary-heading
 ]
 
 balls-own [
@@ -165,7 +166,7 @@ to establish-heading
     let visible-beetles beetles in-radius 50 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
 
     ifelse count visible-beetles >= 1
-    [ show count visible-beetles
+    [ ;show count visible-beetles
       ifelse count visible-beetles = 1
       [let new-heading 0
         ask visible-beetles [
@@ -189,7 +190,7 @@ to establish-heading
         let chosen-headings [0 359]
         let added-value ((item 0 sorted-list) + 360)
         set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
-        show sorted-list
+        ;show sorted-list
 
         ;; iterate through the headings to find the larges difference angle between them
         while [ n < (length sorted-list) - 1 ] [
@@ -226,10 +227,10 @@ to wander  ;; turtle procedure
     if (distancexy 0 0) > 50 [
       let minimum-diff 359
       let old-heading heading-degrees
-      show old-heading
+      ;show old-heading
       let other-heading 0
       ask visible-beetles [
-        show heading-degrees
+        ;show heading-degrees
         let new-diff heading-degrees - old-heading
         if (abs (new-diff)) < minimum-diff [
           set minimum-diff new-diff
@@ -244,16 +245,61 @@ to wander  ;; turtle procedure
         set encounter-reset-heading 0
       ]
 
-      show heading-degrees
+      ;show heading-degrees
     ]
   ]
   [set last-encounter last-encounter + 1]
 
-  show last-encounter
+  ;show last-encounter
 
   ifelse (((distancexy 0 0) < 50) or (last-encounter < 30)) and nested = false [
-    ifelse pcolor = black [
-    set nested true
+
+    ifelse obstacle? (heading-degrees) [
+      ifelse secondary-heading = 0 [
+
+      foreach [45 90 135]
+      [
+        x ->
+          if (found-heading = false) [
+            if not obstacle? (heading-degrees - x) [
+            set secondary-heading heading-degrees - x
+            set found-heading true
+          ]
+          if found-heading = false [
+            if not obstacle? (heading-degrees + x) [
+            set secondary-heading heading-degrees + x
+            set found-heading true
+            ]
+            ]
+
+          ]
+
+      ]
+      ] []
+
+      ifelse found-heading = true and secondary-heading != 0 [
+        set heading secondary-heading
+        let chance 0.0
+        ask patch-ahead 1 [
+          set chance 1.0 - roughness - 0.2
+          set chance round (chance * 10)
+        ]
+        if random 10 < chance [
+          fd 1
+          set walked-distance walked-distance + patch-length
+          ;let random-color one-of base-colors
+          ;set-plot-pen-color random-color plotxy who walked-distance
+          let beetles-ball ball-id
+          let beetles-heading secondary-heading
+          ask balls with [ball-who = beetles-ball] [
+            set heading beetles-heading
+            ;show heading
+            fd 1
+          ]
+        ]
+      ] [
+        set nested true
+      ]
     ] [
       let chance 0.0
       ask patch-ahead 1 [
@@ -263,13 +309,13 @@ to wander  ;; turtle procedure
     if random 10 < chance [
       fd 1
       set walked-distance walked-distance + patch-length
-      let random-color one-of base-colors
+      ;let random-color one-of base-colors
       ;set-plot-pen-color random-color plotxy who walked-distance
       let beetles-ball ball-id
       let beetles-heading heading-degrees
       ask balls with [ball-who = beetles-ball] [
         set heading beetles-heading
-        'show heading
+        ;show heading
         fd 1
       ]
      ]
@@ -291,6 +337,10 @@ end
 
 to-report source? ;; patch or turtle reporter
   report distancexy 0 0 < 7
+end
+
+to-report obstacle? [angle]  ;; turtle procedure
+  report black = [pcolor] of patch-at-heading-and-distance angle 1
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

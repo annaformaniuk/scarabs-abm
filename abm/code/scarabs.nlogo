@@ -23,6 +23,7 @@ beetles-own [
   encounter-reset-heading
   nested
   walked-distance
+  secondary-heading
 ]
 
 balls-own [
@@ -252,9 +253,55 @@ to wander  ;; turtle procedure
   ;show last-encounter
 
   ifelse (((distancexy 0 0) < 50) or (last-encounter < 30)) and nested = false [
-    ifelse pcolor = black [
-    set nested true
+
+    ifelse obstacle? (heading-degrees) [
+      let found-heading false
+      ifelse secondary-heading = 0 [
+      foreach [45 90 135]
+      [
+        x ->
+          if (found-heading = false) [
+            if not obstacle? (heading-degrees - x) [
+            set secondary-heading heading-degrees - x
+            set found-heading true
+          ]
+          if found-heading = false [
+            if not obstacle? (heading-degrees + x) [
+            set secondary-heading heading-degrees + x
+            set found-heading true
+            ]
+            ]
+          ]
+      ]
+      ] [
+      set found-heading true
+      ]
+
+      ifelse found-heading = true and secondary-heading != 0 [
+        set heading secondary-heading
+        let chance 0.0
+        ask patch-ahead 1 [
+          set chance 1.0 - roughness - 0.2
+          set chance round (chance * 10)
+        ]
+        if random 10 < chance [
+          fd 1
+          set walked-distance walked-distance + patch-length
+          ;let random-color one-of base-colors
+          ;set-plot-pen-color random-color plotxy who walked-distance
+          let beetles-ball ball-id
+          let beetles-heading secondary-heading
+          ask balls with [ball-who = beetles-ball] [
+            set heading beetles-heading
+            ;show heading
+            fd 1
+          ]
+        ]
+      ] [
+        set nested true
+      ]
     ] [
+      set secondary-heading 0
       let chance 0.0
       ask patch-ahead 1 [
       set chance 1.0 - roughness - 0.2
@@ -263,7 +310,7 @@ to wander  ;; turtle procedure
     if random 10 < chance [
       fd 1
       set walked-distance walked-distance + patch-length
-      let random-color one-of base-colors
+      ;let random-color one-of base-colors
       ;set-plot-pen-color random-color plotxy who walked-distance
       let beetles-ball ball-id
       let beetles-heading heading-degrees
@@ -291,6 +338,10 @@ end
 
 to-report source? ;; patch or turtle reporter
   report distancexy 0 0 < 7
+end
+
+to-report obstacle? [angle]  ;; turtle procedure
+  report black = [pcolor] of patch-at-heading-and-distance angle 1
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

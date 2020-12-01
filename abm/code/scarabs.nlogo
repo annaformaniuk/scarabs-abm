@@ -63,8 +63,22 @@ to setup-terrain
     ] [
       set roughness random-float 0.3
     ]
+    if random-float 1.0 < 0.04 [ set pcolor black ]
   ]
   diffuse roughness 0.5
+end
+
+to setup-obstacles
+  rectanglebase 50 60 60 10 black
+  ask patches with [pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 90]
+  [ set pcolor black ]
+end
+
+to rectanglebase [x y w l c]
+  ask patches with
+  [ w >= pxcor and pxcor >= x
+    and
+    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c ]
 end
 
 to setup-color-patches

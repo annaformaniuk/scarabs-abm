@@ -281,22 +281,20 @@ to wander  ;; turtle procedure
         set heading secondary-heading
         let chance 0.0
         ask patch-ahead 1 [
-          set chance 1.0 - roughness - 0.2
-          set chance round (chance * 10)
+          set chance 1.0 - roughness
+          ;set chance round (chance * 10)
         ]
-        if random 10 < chance [
-          fd 1
-          set walked-distance walked-distance + patch-length
-          ;let random-color one-of base-colors
-          ;set-plot-pen-color random-color plotxy who walked-distance
-          let beetles-ball ball-id
-          let beetles-heading secondary-heading
-          ask balls with [ball-who = beetles-ball] [
-            set heading beetles-heading
-            ;show heading
-            fd 1
+        show chance
+        fd chance
+        set walked-distance walked-distance + (chance * patch-length)
+        ;let random-color one-of base-colors
+        ;set-plot-pen-color random-color plotxy who walked-distance
+        let beetles-ball ball-id
+        let beetles-heading secondary-heading
+        ask balls with [ball-who = beetles-ball] [
+          set heading beetles-heading
+          fd chance
           ]
-        ]
       ] [
         set nested true
       ]
@@ -304,28 +302,29 @@ to wander  ;; turtle procedure
       set secondary-heading 0
       let chance 0.0
       ask patch-ahead 1 [
-      set chance 1.0 - roughness - 0.2
-      set chance round (chance * 10)
+      set chance 1.0 - roughness
     ]
+      show chance
     if random 10 < chance [
-      fd 1
-      set walked-distance walked-distance + patch-length
-      ;let random-color one-of base-colors
-      ;set-plot-pen-color random-color plotxy who walked-distance
+      fd chance
+      set walked-distance walked-distance + (patch-length * chance)
+      let random-color one-of base-colors
+      set-plot-pen-color random-color plotxy who walked-distance
       let beetles-ball ball-id
       let beetles-heading heading-degrees
       ask balls with [ball-who = beetles-ball] [
         set heading beetles-heading
-        ;show heading
-        fd 1
+        fd chance
       ]
      ]
     ]
 
   ] [
     set nested true
-  print("Total distance walked: ")
- show walked-distance ]
+    set color grey
+    ;print("Total distance walked: ")
+    ;show walked-distance
+  ]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range

@@ -64,7 +64,6 @@ to setup-terrain
     ] [
       set roughness random-float 0.3
     ]
-    if random-float 1.0 < 0.04 [ set pcolor black ]
   ]
   diffuse roughness 0.5
 end
@@ -72,14 +71,16 @@ end
 to setup-obstacles
   rectanglebase 50 60 60 10 black
   ask patches with [pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 90]
-  [ set pcolor black ]
+  [ set pcolor black
+  set roughness 1.0]
 end
 
 to rectanglebase [x y w l c]
   ask patches with
   [ w >= pxcor and pxcor >= x
     and
-    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c ]
+    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c
+  set roughness 1.0]
 end
 
 to setup-color-patches
@@ -116,7 +117,7 @@ end
 to move  ;; turtle procedure
   ifelse not has-ball? [ roll-ball ] [
     ifelse heading-degrees = 0 [ establish-heading ]
-    [ wander ]
+    [ if nested = false [ wander ] ]
   ]
 end
 
@@ -163,7 +164,7 @@ to establish-heading
     set heading heading + 20
     set dance-counter dance-counter + 1
   ] [
-    let visible-beetles beetles in-radius 50 with [ heading-degrees > 0 ]  ; picking beetles in radius 10 to look at
+    let visible-beetles beetles in-radius 50 with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in radius 10 to look at
 
     ifelse count visible-beetles >= 1
     [ ;show count visible-beetles
@@ -223,58 +224,97 @@ to wander  ;; turtle procedure
   ifelse count visible-beetles > 0
   [
     set last-encounter 0
-    set encounter-reset-heading encounter-reset-heading + 1
-    if (distancexy 0 0) > 50 [
-      let minimum-diff 359
-      let old-heading heading-degrees
-      ;show old-heading
-      let other-heading 0
-      ask visible-beetles [
-        ;show heading-degrees
-        let new-diff heading-degrees - old-heading
-        if (abs (new-diff)) < minimum-diff [
-          set minimum-diff new-diff
-          set other-heading heading-degrees  ]
-      ]
-      if minimum-diff < 30 and encounter-reset-heading >= 30 [
-        ifelse other-heading > heading-degrees [
-        set heading-degrees heading-degrees - 15
-        ] [
-          set heading-degrees heading-degrees + 15
+    let visible-active-beetles visible-beetles with [ nested = false ]
+    if count visible-active-beetles > 0 [
+      set encounter-reset-heading encounter-reset-heading + 1
+      if (distancexy 0 0) > 50 [
+        let minimum-diff 359
+        let old-heading heading-degrees
+        ;show old-heading
+        let other-heading 0
+        ask visible-beetles [
+          ;show heading-degrees
+          let new-diff heading-degrees - old-heading
+          if (abs (new-diff)) < minimum-diff [
+            set minimum-diff new-diff
+            set other-heading heading-degrees  ]
         ]
-        set encounter-reset-heading 0
-      ]
+        if minimum-diff < 30 and encounter-reset-heading >= 30 [
+          ifelse other-heading > heading-degrees [
+            set heading-degrees heading-degrees - 15
+          ] [
+            set heading-degrees heading-degrees + 15
+          ]
+          set encounter-reset-heading 0
+        ]
 
-      ;show heading-degrees
+        ;show heading-degrees
+      ]
     ]
+
   ]
   [set last-encounter last-encounter + 1]
 
   ;show last-encounter
 
-  ifelse (((distancexy 0 0) < 50) or (last-encounter < 30)) and nested = false [
+  ifelse ((distancexy 0 0) < 90) or (last-encounter < 30) [
 
     ifelse obstacle? (heading-degrees) [
       let found-heading false
       ifelse secondary-heading = 0 [
-      foreach [45 90 135]
+      foreach [15 30 45 60 75 90 105 130]
       [
         x ->
           if (found-heading = false) [
+            show heading-degrees
+            show x
             if not obstacle? (heading-degrees - x) [
             set secondary-heading heading-degrees - x
             set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
           ]
           if found-heading = false [
             if not obstacle? (heading-degrees + x) [
             set secondary-heading heading-degrees + x
             set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
             ]
             ]
           ]
       ]
       ] [
-      set found-heading true
+        ifelse obstacle? (secondary-heading) [
+        foreach [15 30 45 60 75 90 105 130]
+      [
+        x ->
+          if (found-heading = false) [
+            show heading-degrees
+            show x
+            if not obstacle? (heading-degrees - x) [
+            set secondary-heading heading-degrees - x
+            set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
+          ]
+          if found-heading = false [
+            if not obstacle? (heading-degrees + x) [
+            set secondary-heading heading-degrees + x
+            set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
+            ]
+            ]
+          ]
+      ]
+        ] [
+          set found-heading true
+        ]
       ]
 
       ifelse found-heading = true and secondary-heading != 0 [
@@ -297,6 +337,11 @@ to wander  ;; turtle procedure
           ]
       ] [
         set nested true
+        set color green
+        let beetles-ball ball-id
+        ask balls with [ball-who = beetles-ball] [
+          set color green
+        ]
       ]
     ] [
       set secondary-heading 0
@@ -304,7 +349,6 @@ to wander  ;; turtle procedure
       ask patch-ahead 1 [
       set chance 1.0 - roughness
     ]
-      show chance
     if random 10 < chance [
       fd chance
       set walked-distance walked-distance + (patch-length * chance)
@@ -322,6 +366,10 @@ to wander  ;; turtle procedure
   ] [
     set nested true
     set color grey
+    let beetles-ball ball-id
+    ask balls with [ball-who = beetles-ball] [
+     set color grey
+      ]
     ;print("Total distance walked: ")
     ;show walked-distance
   ]
@@ -346,11 +394,11 @@ end
 GRAPHICS-WINDOW
 587
 30
-1088
-540
+1087
+531
 -1
 -1
-0.8
+1.0
 1
 10
 1
@@ -360,10 +408,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--250
-250
--250
-250
+-200
+200
+-200
+200
 1
 1
 1
@@ -379,7 +427,7 @@ beetles-number
 beetles-number
 1
 100
-34.0
+16.0
 1
 1
 NIL
@@ -425,17 +473,17 @@ PLOT
 227
 339
 plot 1
-NIL
-NIL
+Beetle ID
+Distance walked
 0.0
-10.0
+40.0
 0.0
-10.0
+2000.0
 true
 false
 "" ""
 PENS
-"pen-0" 1.0 0 -7500403 true "" ""
+"pen-0" 1.0 2 -7500403 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?

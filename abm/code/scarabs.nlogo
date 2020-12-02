@@ -1,12 +1,33 @@
+extensions [
+  py
+]
+
+globals [ patch-length ]
+
+breed [beetles beetle]
+breed [balls ball]
+
 patches-own [
   roughness            ;; degree of how rough the terrain is
 ]
 
-turtles-own [
+beetles-own [
   has-ball?
+  ball-id
   heading-degrees
+  ball-shaping-counter
+  dance-counter
   course-deviation
   memory-level
+  last-encounter
+  encounter-reset-heading
+  nested
+  walked-distance
+  secondary-heading
+]
+
+balls-own [
+  ball-who
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -15,15 +36,19 @@ turtles-own [
 
 to setup
   clear-all
-  set-default-shape turtles "bug"
+  set-default-shape beetles "bug"
+  set-default-shape balls "circle"
   setup-patches
   reset-ticks
+  set patch-length 10 ; one patch equals 10 centimeters maybe
+  ;py:setup py:python
 end
 
 to setup-patches
   setup-source
   setup-terrain
   setup-color-patches
+  setup-obstacles
 end
 
 to setup-source
@@ -43,22 +68,46 @@ to setup-terrain
   diffuse roughness 0.5
 end
 
+to setup-obstacles
+  rectanglebase 50 60 60 10 black
+  ask patches with [pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 90]
+  [ set pcolor black
+  set roughness 1.0]
+end
+
+to rectanglebase [x y w l c]
+  ask patches with
+  [ w >= pxcor and pxcor >= x
+    and
+    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c
+  set roughness 1.0]
+end
+
 to setup-color-patches
   ask patches with [not source?] [
     set pcolor scale-color brown roughness 1.0 0.0
   ]
 end
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;;; Go procedures ;;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 
 to go  ;; forever button
-  ;; add beetles one at a time
-  if count turtles < beetles-number [ create-beetle ]
+  let beetles-at-source
+    count beetles-on patches with [
+      (pxcor >= -10 and pxcor <= 10) and (pycor <= 10  and pycor >= -10)
+  ]
 
-  ask turtles [
-    set size 3
+  ;; add beetles one at a time
+  if (count beetles < beetles-number) and (beetles-at-source <= 3) [
+    if random 10 < 1 [
+        create-beetle
+      ]
+    ]
+
+  ask beetles [
     move
   ]
 
@@ -66,47 +115,290 @@ to go  ;; forever button
 end
 
 to move  ;; turtle procedure
-  ;if not has-ball? [ create-ball  ]
-  ;if has-ball? [ move-towards-nest ]
-  ; ifelse empty? heading [set-heading]
-  wander
+  ifelse not has-ball? [ roll-ball ] [
+    ifelse heading-degrees = 0 [ establish-heading ]
+    [ if nested = false [ wander ] ]
+  ]
 end
 
 to create-beetle
-  create-turtles 1 [
-    set size 2
+  create-beetles 1 [
+    set size 10
     set has-ball? false
-    set heading-degrees random 360
+    set color blue
+    set ball-shaping-counter 0
+    set dance-counter 0
+    set last-encounter 0
+    set nested false
+    set encounter-reset-heading 30
+    set walked-distance 0
+  ]
+
+end
+
+to roll-ball
+  ifelse ball-shaping-counter < 30 [
+    if pcolor = red [
+      set heading random 360
+      fd 1
+    ]
+    set ball-shaping-counter ball-shaping-counter + 1
+  ] [
+    if random 10 < 2 [
+      let temp -1
+      hatch-balls 1 [
+        set color magenta
+        set size 5
+        set ball-who who
+        set temp who
+      ]
+      set has-ball? true
+      set ball-id temp
+      set ball-shaping-counter 0
+     ]
+  ]
+end
+
+to establish-heading
+  ifelse dance-counter < 20 [
+    set heading heading + 20
+    set dance-counter dance-counter + 1
+  ] [
+    let visible-beetles beetles in-radius 50 with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in radius 10 to look at
+
+    ifelse count visible-beetles >= 1
+    [ ;show count visible-beetles
+      ifelse count visible-beetles = 1
+      [let new-heading 0
+        ask visible-beetles [
+          ifelse heading-degrees > 180 [
+            set new-heading ((heading-degrees - 180) mod 360)] [
+            set new-heading ((heading-degrees + 180) mod 360)]
+        ]
+        let noise random-in-range -20 20
+
+        set heading-degrees new-heading + noise ; setting new heading opposite to the existing one
+      ]
+      [ let headings-list []  ; initialize empty list of headings in the range
+        ask visible-beetles [
+          set headings-list lput heading-degrees headings-list  ; append headings
+        ]
+        let sorted-list sort headings-list  ; sort them for calculations
+
+        ;; initial values for iteration
+        let n 0
+        let difference 0
+        let chosen-headings [0 359]
+        let added-value ((item 0 sorted-list) + 360)
+        set sorted-list lput added-value sorted-list  ; append the first one too, to round it up
+        ;show sorted-list
+
+        ;; iterate through the headings to find the larges difference angle between them
+        while [ n < (length sorted-list) - 1 ] [
+          let m n + 1
+          let new-difference (item m sorted-list - item n sorted-list)
+          if new-difference > difference [
+            set difference new-difference
+            set chosen-headings (list item n sorted-list item m sorted-list)
+          ]
+          set n n + 1
+        ]
+
+        let noise random-in-range -20 20
+
+        set heading-degrees int ((((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise) mod 360)
+
+        ;show heading-degrees
+      ]
+    ]
+
+    [set heading-degrees random 360]  ; random heading for the only beetle in view
+    set heading 0
   ]
 end
 
 
 to wander  ;; turtle procedure
   set heading heading-degrees
-  if (distancexy 0 0) < 40 [
-    let chance 0.0
-    ask patch-ahead 1 [
-      set chance 1.0 - roughness - 0.2
-      set chance round (chance * 10)
+  let visible-beetles other beetles in-radius 30
+  ifelse count visible-beetles > 0
+  [
+    set last-encounter 0
+    let visible-active-beetles visible-beetles with [ nested = false ]
+    if count visible-active-beetles > 0 [
+      set encounter-reset-heading encounter-reset-heading + 1
+      if (distancexy 0 0) > 50 [
+        let minimum-diff 359
+        let old-heading heading-degrees
+        ;show old-heading
+        let other-heading 0
+        ask visible-beetles [
+          ;show heading-degrees
+          let new-diff heading-degrees - old-heading
+          if (abs (new-diff)) < minimum-diff [
+            set minimum-diff new-diff
+            set other-heading heading-degrees  ]
+        ]
+        if minimum-diff < 30 and encounter-reset-heading >= 30 [
+          ifelse other-heading > heading-degrees [
+            set heading-degrees heading-degrees - 15
+          ] [
+            set heading-degrees heading-degrees + 15
+          ]
+          set encounter-reset-heading 0
+        ]
+
+        ;show heading-degrees
+      ]
+    ]
+
+  ]
+  [set last-encounter last-encounter + 1]
+
+  ;show last-encounter
+
+  ifelse ((distancexy 0 0) < 90) or (last-encounter < 30) [
+
+    ifelse obstacle? (heading-degrees) [
+      let found-heading false
+      ifelse secondary-heading = 0 [
+      foreach [15 30 45 60 75 90 105 130]
+      [
+        x ->
+          if (found-heading = false) [
+            show heading-degrees
+            show x
+            if not obstacle? (heading-degrees - x) [
+            set secondary-heading heading-degrees - x
+            set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
+          ]
+          if found-heading = false [
+            if not obstacle? (heading-degrees + x) [
+            set secondary-heading heading-degrees + x
+            set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
+            ]
+            ]
+          ]
+      ]
+      ] [
+        ifelse obstacle? (secondary-heading) [
+        foreach [15 30 45 60 75 90 105 130]
+      [
+        x ->
+          if (found-heading = false) [
+            show heading-degrees
+            show x
+            if not obstacle? (heading-degrees - x) [
+            set secondary-heading heading-degrees - x
+            set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
+          ]
+          if found-heading = false [
+            if not obstacle? (heading-degrees + x) [
+            set secondary-heading heading-degrees + x
+            set found-heading true
+            show "found a free way"
+            show x
+            show secondary-heading
+            ]
+            ]
+          ]
+      ]
+        ] [
+          set found-heading true
+        ]
+      ]
+
+      ifelse found-heading = true and secondary-heading != 0 [
+        set heading secondary-heading
+        let chance 0.0
+        ask patch-ahead 1 [
+          set chance 1.0 - roughness
+          ;set chance round (chance * 10)
+        ]
+        show chance
+        fd chance
+        set walked-distance walked-distance + (chance * patch-length)
+        ;let random-color one-of base-colors
+        ;set-plot-pen-color random-color plotxy who walked-distance
+        let beetles-ball ball-id
+        let beetles-heading secondary-heading
+        ask balls with [ball-who = beetles-ball] [
+          set heading beetles-heading
+          fd chance
+          ]
+      ] [
+        set nested true
+        set color green
+        let beetles-ball ball-id
+        ask balls with [ball-who = beetles-ball] [
+          set color green
+        ]
+      ]
+    ] [
+      set secondary-heading 0
+      let chance 0.0
+      ask patch-ahead 1 [
+      set chance 1.0 - roughness
     ]
     if random 10 < chance [
-        fd 1
+      fd chance
+      set walked-distance walked-distance + (patch-length * chance)
+      let random-color one-of base-colors
+      set-plot-pen-color random-color plotxy who walked-distance
+      let beetles-ball ball-id
+      let beetles-heading heading-degrees
+      ask balls with [ball-who = beetles-ball] [
+        set heading beetles-heading
+        fd chance
       ]
+     ]
+    ]
+
+  ] [
+    set nested true
+    set color grey
+    let beetles-ball ball-id
+    ask balls with [ball-who = beetles-ball] [
+     set color grey
+      ]
+    ;print("Total distance walked: ")
+    ;show walked-distance
+  ]
+end
+
+to-report random-in-range [#low #high] ; random integer in given range
+  ifelse random 2 = 0 [
+    report #low + random(#high - #low + 1)
+  ] [
+  report (-1)*(#low + random(#high - #low + 1))
   ]
 end
 
 to-report source? ;; patch or turtle reporter
-  report distancexy 0 0 < 5
+  report distancexy 0 0 < 7
+end
+
+to-report obstacle? [angle]  ;; turtle procedure
+  report black = [pcolor] of patch-at-heading-and-distance angle 1
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 587
 30
-1101
-545
+1087
+531
 -1
 -1
-5.0
+1.0
 1
 10
 1
@@ -116,10 +408,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--50
-50
--50
-50
+-200
+200
+-200
+200
 1
 1
 1
@@ -135,7 +427,7 @@ beetles-number
 beetles-number
 1
 100
-15.0
+16.0
 1
 1
 NIL
@@ -174,6 +466,24 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+27
+189
+227
+339
+plot 1
+Beetle ID
+Distance walked
+0.0
+40.0
+0.0
+2000.0
+true
+false
+"" ""
+PENS
+"pen-0" 1.0 2 -7500403 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?

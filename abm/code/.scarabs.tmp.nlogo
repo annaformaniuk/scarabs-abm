@@ -8,6 +8,8 @@ globals [
   visible-beetles-radius ; will become individual later
   minimum-dist-from-source
   minimum-last-encounter-time
+  dance-duration
+  max-deviation
 ]
 
 breed [beetles beetle]
@@ -30,6 +32,7 @@ beetles-own [
   nested
   walked-distance
   secondary-heading
+  course-deviation
 ]
 
 balls-own [
@@ -51,6 +54,8 @@ to setup
   set visible-beetles-radius 10 ; in patches
   set minimum-dist-from-source 90 ; in patches
   set minimum-last-encounter-time 30 ; in ticks
+  set dance-duration 20 ; in ticks
+  set max-deviation 20
   ; py:setup py:python
 end
 
@@ -106,7 +111,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;
 
 
-to go  ;; forever button
+to go  ; forever button
   let beetles-at-source
     count beetles-on patches with [
       (pxcor >= -10 and pxcor <= 10) and (pycor <= 10  and pycor >= -10)
@@ -126,8 +131,7 @@ to go  ;; forever button
   tick
 end
 
-to create-beetle
-  ; beetle setup
+to create-beetle ; beetle setup
   create-beetles 1 [
     set size 10
     set has-ball? false
@@ -138,10 +142,11 @@ to create-beetle
     set nested false
     set encounter-reset-heading 30
     set walked-distance 0
+    set course-deviation 0
   ]
 end
 
-to move  ;; turtle procedure
+to move  ; turtle procedure
   ; roll the ball, establish heading and walk unless already nested
   ifelse not has-ball? [ roll-ball ] [
     ifelse heading-degrees = 0 [ establish-heading ]
@@ -174,9 +179,10 @@ to roll-ball
 end
 
 to establish-heading
-  ifelse dance-counter < 20 [
+  ifelse dance-counter < dance-duration [
     dance
   ] [
+    set dance-counter 0
     let visible-beetles beetles in-radius 50 with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in radius 10 to look at
 
     ifelse count visible-beetles >= 1 [
@@ -229,15 +235,7 @@ to establish-heading
   ]
 end
 
-; the turning around on the ball to look at the sky and get orientation
-to dance
-  set heading heading + 20
-  set dance-counter dance-counter + 1
-end
-
-
 to wander  ;; turtle procedure
-  set heading heading-degrees
   let visible-beetles other beetles in-radius 30
   ifelse count visible-beetles > 0
   [
@@ -295,8 +293,20 @@ to wander  ;; turtle procedure
       ]
 
       ifelse found-heading = true and secondary-heading != 0 [
-        ; move in the secondary direction
-        push-ball secondary-heading
+        set course-deviation course-deviation + 1
+        ifelse course-deviation > max-deviation [
+          ifelse  dance-counter < dance-duration [
+            dance
+          ] [
+            set dance-counter 0
+            set course-deviation 0
+            push-ball secondary-heading
+          ]
+        ] [
+          ; move in the secondary direction
+          push-ball secondary-heading
+        ]
+
       ] [
         ; got stuck somewhere somehow
         set nested true
@@ -310,7 +320,17 @@ to wander  ;; turtle procedure
       ; if there is no obstacle in front, just walk depending on
       ; how rough the patch is
       set secondary-heading 0
-      push-ball heading-degrees
+      ifelse course-deviation = 0 [
+        push-ball heading-degrees
+      ] [
+        ifelse  dance-counter < dance-duration [
+          dance
+        ] [
+          set dance-counter 0
+          set course-deviation 0
+          push-ball heading-degrees
+        ]
+      ]
     ]
   ] [
     ; nest if far enough and haven't seen anyone for long enough
@@ -323,6 +343,12 @@ to wander  ;; turtle procedure
   ]
 end
 
+; the turning around on the ball to look at the sky and get orientation
+to dance
+  set heading heading + 20
+  set dance-counter dance-counter + 1
+end
+
 to push-ball [#some-heading] ; beetle and ball actually moving
   set heading #some-heading
   let chance 0.0
@@ -331,19 +357,19 @@ to push-ball [#some-heading] ; beetle and ball actually moving
     ;set chance round (chance * 10)
   ]
   show chance
-  if random 10 < chance [
+  ;if random 10 < chance [
+  fd chance
+  set walked-distance walked-distance + (chance * patch-length)
+  ; plotting
+  let random-color one-of base-colors
+  set-plot-pen-color random-color plotxy who walked-distance
+  let beetles-ball ball-id
+  let beetles-heading #some-heading
+  ask balls with [ball-who = beetles-ball] [
+    set heading beetles-heading
     fd chance
-    set walked-distance walked-distance + (chance * patch-length)
-    ; plotting
-    let random-color one-of base-colors
-    set-plot-pen-color random-color plotxy who walked-distance
-    let beetles-ball ball-id
-    let beetles-heading #some-heading
-    ask balls with [ball-who = beetles-ball] [
-      set heading beetles-heading
-      fd chance
-    ]
   ]
+  ;]
 end
 
 to-report find-secondary-heading [#initial-heading]
@@ -419,7 +445,7 @@ beetles-number
 beetles-number
 1
 100
-16.0
+17.0
 1
 1
 NIL

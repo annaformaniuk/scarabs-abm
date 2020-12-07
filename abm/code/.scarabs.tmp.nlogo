@@ -4,6 +4,7 @@ extensions [
 
 globals [
   patch-length
+  tick-duration
   ball-rolling-duration
   visible-beetles-radius ; will become individual later
   minimum-dist-from-source
@@ -31,6 +32,7 @@ beetles-own [
   encounter-reset-heading
   nested
   walked-distance
+  speed
   secondary-heading
   course-deviation
 ]
@@ -50,6 +52,7 @@ to setup
   setup-patches
   reset-ticks
   set patch-length 10 ; one patch equals 10 centimeters maybe
+  set tick-duration 1 ; one tick is 1 second maybe
   set ball-rolling-duration 30 ; in ticks
   set visible-beetles-radius 10 ; in patches
   set minimum-dist-from-source 90 ; in patches
@@ -127,6 +130,8 @@ to go  ; forever button
   ask beetles [
     move
   ]
+
+  if count beetles > 0 [show mean [speed] of beetles]
 
   tick
 end
@@ -351,23 +356,24 @@ end
 
 to push-ball [#some-heading] ; beetle and ball actually moving
   set heading #some-heading
-  let chance 0.0
+  let step-length 0.0
   ask patch-ahead 1 [
-    set chance 1.0 - roughness
-    ;set chance round (chance * 10)
+    set step-length 1.0 - roughness
+    ;set step-length round (step-length * 10)
   ]
-  show chance
-  ;if random 10 < chance [
-  fd chance
-  set walked-distance walked-distance + (chance * patch-length)
+  ; show step-length
+  ;if random 10 < step-length [
+  fd step-length
+  set walked-distance walked-distance + (step-length * patch-length)
+  set speed step-length / tick-duration
   ; plotting
-  let random-color one-of base-colors
-  set-plot-pen-color random-color plotxy who walked-distance
+  ;let random-color one-of base-colors
+  ;set-plot-pen-color random-color plotxy who walked-distance
   let beetles-ball ball-id
   let beetles-heading #some-heading
   ask balls with [ball-who = beetles-ball] [
     set heading beetles-heading
-    fd chance
+    fd step-length
   ]
   ;]
 end
@@ -490,18 +496,20 @@ PLOT
 189
 227
 339
-plot 1
-Beetle ID
-Distance walked
+Speed
+NIL
+Meters per tick
 0.0
-40.0
+15.0
 0.0
-2000.0
+1.0
 true
 false
 "" ""
 PENS
-"pen-0" 1.0 2 -7500403 true "" ""
+"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot mean [speed] of beetles]"
+"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot min [speed] of beetles]"
+"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot max [speed] of beetles]"
 
 @#$#@#$#@
 ## WHAT IS IT?

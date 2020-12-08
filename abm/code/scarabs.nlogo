@@ -352,6 +352,7 @@ end
 to dance
   set heading heading + 20
   set dance-counter dance-counter + 1
+  set speed 0
 end
 
 to push-ball [#some-heading] ; beetle and ball actually moving
@@ -507,9 +508,9 @@ true
 false
 "" ""
 PENS
-"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot mean [speed] of beetles]"
-"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot min [speed] of beetles]"
-"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot max [speed] of beetles]"
+"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot mean [speed] of beetles with [speed > 0]]"
+"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot min [speed] of beetles with [speed > 0]]"
+"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot max [speed] of beetles with [speed > 0]]"
 
 @#$#@#$#@
 ## WHAT IS IT?

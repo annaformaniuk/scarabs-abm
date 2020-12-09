@@ -15,22 +15,6 @@ ap.add_argument("-l", "--label", required=True, help="Label of annotations")
 args = vars(ap.parse_args())
 
 
-def from_yolo_to_cor(box, shape):
-    img_h, img_w, _ = shape
-    # x1, y1 = ((x + witdth)/2)*img_width, ((y + height)/2)*img_height
-    # x2, y2 = ((x - witdth)/2)*img_width, ((y - height)/2)*img_height
-    x1, y1 = int((box[0] + box[2]/2)*img_w), int((box[1] + box[3]/2)*img_h)
-    x2, y2 = int((box[0] - box[2]/2)*img_w), int((box[1] - box[3]/2)*img_h)
-    return x1, y1, x2, y2
-    
-def draw_boxes(img, boxes):
-    for box in boxes:
-        x1, y1, x2, y2 = from_yolo_to_cor(box, shape)
-        cv2.rectangle(img, (x1, y1), (x2, y2), (0,255,0), 3)
-    plt.imshow(img)
-    cv2.waitKey(0)
-
-
 def get_img_shape(path):
     img = cv2.imread(path)
     try:

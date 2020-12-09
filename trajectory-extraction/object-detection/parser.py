@@ -16,11 +16,17 @@ ap.add_argument("-l", "--labels", required=True, help="Label of annotations")
 args = vars(ap.parse_args())
 args["labels"] = args["labels"].split(",")
 
+def from_yolo_to_cor(box, shape):
+    img_h, img_w, _ = shape
+    x1, y1 = int((box[0] + box[2]/2)*img_w), int((box[1] + box[3]/2)*img_h)
+    x2, y2 = int((box[0] - box[2]/2)*img_w), int((box[1] - box[3]/2)*img_h)
+    print("bounding box", x1, y1, x2, y2)
+    return x1, y1, x2, y2
 
 def get_img_shape(path):
     img = cv2.imread(path)
     try:
-        return img.shape
+        return img, img.shape
     except AttributeError:
         print('error! ', path)
         return (None)
@@ -29,13 +35,20 @@ def write_annotation(num, path, name, position, size):
     print(num, path, name, position, size)
     name_no_ext = os.path.splitext(name)[0]
 
-    full_size = get_img_shape(path + '/' + name)
+    img, full_size = get_img_shape(path + '/' + name)
+
     if (full_size):
         top_left = [int(i) for i in position.split(';')]
         h_w = [int(j) for j in size.split(';')]
-        bottom_right = [top_left[0] + h_w[1], top_left[1] + h_w[0]]
+        bottom_right = [top_left[0] + h_w[0], top_left[1] + h_w[1]]
         print(top_left)
         print(bottom_right)
+
+        # imcopy = img.copy()
+        # cv2.rectangle(imcopy, (top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]), (0,225,0), 3)
+        # cv2.imshow("image", imcopy)
+        # cv2.waitKey(0)
+
         x = (bottom_right[0] + top_left[0])/2.0
         y = (bottom_right[1] + top_left[1])/2.0
 
@@ -43,9 +56,14 @@ def write_annotation(num, path, name, position, size):
         dh = 1./full_size[0]
 
         x = x*dw
-        w = h_w[1]*dw
+        h = h_w[0]*dw
         y = y*dh
-        h = h_w[0]*dh
+        w = h_w[1]*dh
+
+        # x11, y11, x21, y21 = from_yolo_to_cor([x, y, h, w], imcopy.shape)
+        # cv2.rectangle(imcopy, (x11, y11), (x21, y21), (0,0,225), 3)
+        # cv2.imshow("image", imcopy)
+        # cv2.waitKey(0)
 
         out_path = path + '/annotations/' + name_no_ext + '.txt'
         if (os.path.isfile(out_path)):

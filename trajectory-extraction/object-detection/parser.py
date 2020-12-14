@@ -65,7 +65,7 @@ def write_annotation(num, path, name, position, size):
         # cv2.imshow("image", imcopy)
         # cv2.waitKey(0)
 
-        out_path = path + '/annotations/' + name_no_ext + '.txt'
+        out_path = path + '/' + name_no_ext + '.txt'
         if (os.path.isfile(out_path)):
             with open(out_path, 'a') as fd:
                 line = str(num) + ' ' + str(x) + ' ' + \

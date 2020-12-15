@@ -128,7 +128,7 @@ to go  ; forever button
       ]
     ]
 
-  if count beetles with [nested = false] > 0 [
+  if count beetles w> 0 [
     ask beetles [
     move
   ]

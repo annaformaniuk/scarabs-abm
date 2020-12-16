@@ -404,11 +404,11 @@ to-report find-secondary-heading [#initial-heading]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range
-  ifelse random 2 = 0 [
+  ;ifelse random 2 = 0 [
     report #low + random(#high - #low + 1)
-  ] [
-  report (-1)*(#low + random(#high - #low + 1))
-  ]
+  ;] [
+  ;report (-1)*(#low + random(#high - #low + 1))
+  ;]
 end
 
 to-report source? ; patch reporter

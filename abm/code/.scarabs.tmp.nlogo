@@ -128,7 +128,7 @@ to go  ; forever button
       ]
     ]
 
-  if count beetles w> 0 [
+  if count beetles with [nested = false] > 0 [
     ask beetles [
     move
   ]
@@ -362,7 +362,8 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   let randomness (random-in-range 95 105) / 100
   let step-length pronotum-width * 0.035
   ask patch-ahead 1 [
-    set step-length step-length - roughness
+    set step-length step-length
+   ; - roughness
     ;set step-length round (step-length * 10)
   ]
   ; show step-length
@@ -404,7 +405,7 @@ to-report find-secondary-heading [#initial-heading]
 end
 
 to-report random-in-range [#low #high] ; random integer in given range
-  ifelse random 2 = 0 [
+  ;ifelse random 2 = 0 [
     report #low + random(#high - #low + 1)
   ] [
   report (-1)*(#low + random(#high - #low + 1))

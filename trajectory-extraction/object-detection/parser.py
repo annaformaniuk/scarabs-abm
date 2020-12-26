@@ -35,48 +35,50 @@ def write_annotation(num, path, name, position, size):
     print(num, path, name, position, size)
     name_no_ext = os.path.splitext(name)[0]
 
-    img, full_size = get_img_shape(path + '/' + name)
+    if (os.path.isfile(path + '/' + name)):
 
-    if (full_size):
-        top_left = [int(i) for i in position.split(';')]
-        h_w = [int(j) for j in size.split(';')]
-        bottom_right = [top_left[0] + h_w[0], top_left[1] + h_w[1]]
-        print(top_left)
-        print(bottom_right)
+        img, full_size = get_img_shape(path + '/' + name)
 
-        # imcopy = img.copy()
-        # cv2.rectangle(imcopy, (top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]), (0,225,0), 3)
-        # cv2.imshow("image", imcopy)
-        # cv2.waitKey(0)
+        if (full_size):
+            top_left = [int(i) for i in position.split(';')]
+            h_w = [int(j) for j in size.split(';')]
+            bottom_right = [top_left[0] + h_w[0], top_left[1] + h_w[1]]
+            print(top_left)
+            print(bottom_right)
 
-        x = (bottom_right[0] + top_left[0])/2.0
-        y = (bottom_right[1] + top_left[1])/2.0
+            # imcopy = img.copy()
+            # cv2.rectangle(imcopy, (top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]), (0,225,0), 3)
+            # cv2.imshow("image", imcopy)
+            # cv2.waitKey(0)
 
-        dw = 1./full_size[1]
-        dh = 1./full_size[0]
+            x = (bottom_right[0] + top_left[0])/2.0
+            y = (bottom_right[1] + top_left[1])/2.0
 
-        x = x*dw
-        h = h_w[0]*dw
-        y = y*dh
-        w = h_w[1]*dh
+            dw = 1./full_size[1]
+            dh = 1./full_size[0]
 
-        # x11, y11, x21, y21 = from_yolo_to_cor([x, y, h, w], imcopy.shape)
-        # cv2.rectangle(imcopy, (x11, y11), (x21, y21), (0,0,225), 3)
-        # cv2.imshow("image", imcopy)
-        # cv2.waitKey(0)
+            x = x*dw
+            h = h_w[0]*dw
+            y = y*dh
+            w = h_w[1]*dh
 
-        out_path = path + '/' + name_no_ext + '.txt'
-        if (os.path.isfile(out_path)):
-            with open(out_path, 'a') as fd:
-                line = str(num) + ' ' + str(x) + ' ' + \
-                    str(y) + ' ' + str(h) + ' ' + str(w)
-                fd.write(line)
-        else:
-            with open(out_path, 'w') as fd:
-                line = str(num) + ' ' + str(x) + ' ' + \
-                    str(y) + ' ' + str(h) + ' ' + str(w)
-                fd.write(line)
-                fd.write("\n")
+            # x11, y11, x21, y21 = from_yolo_to_cor([x, y, h, w], imcopy.shape)
+            # cv2.rectangle(imcopy, (x11, y11), (x21, y21), (0,0,225), 3)
+            # cv2.imshow("image", imcopy)
+            # cv2.waitKey(0)
+
+            out_path = path + '/' + name_no_ext + '.txt'
+            if (os.path.isfile(out_path)):
+                with open(out_path, 'a') as fd:
+                    line = str(num) + ' ' + str(x) + ' ' + \
+                        str(y) + ' ' + str(h) + ' ' + str(w)
+                    fd.write(line)
+            else:
+                with open(out_path, 'w') as fd:
+                    line = str(num) + ' ' + str(x) + ' ' + \
+                        str(y) + ' ' + str(h) + ' ' + str(w)
+                    fd.write(line)
+                    fd.write("\n")
 
 f = open(args['json'])
 data = json.load(f)

@@ -42,18 +42,3 @@ if (os.path.isfile(args["video_path"])):
             break
     cap.release()
     cv.destroyAllWindows()
-
-
-
-# if warp_mode == cv2.MOTION_HOMOGRAPHY :
-#     # Use warpPerspective for Homography 
-#     im2_aligned = cv2.warpPerspective (im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
-# else :
-#     # Use warpAffine for Translation, Euclidean and Affine
-#     im2_aligned = cv2.warpAffine(im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
-
-# # Show final results
-# cv2.imshow("Image 1", im1)
-# cv2.imshow("Image 2", im2)
-# cv2.imshow("Aligned Image 2", im2_aligned)
-# cv2.waitKey(0)

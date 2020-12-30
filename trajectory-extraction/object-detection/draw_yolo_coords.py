@@ -4,8 +4,8 @@ import os
 import argparse
 import cv2
 import numpy as np
-
-# python draw_yolo_coords.py --photos_folder F:\Downloads\database\Allogymnopleuri_#01\Allogymnopleuri_#01_imgs
+#F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj
+# python draw_yolo_coords.py --photos_folder F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -59,6 +59,7 @@ while i < len(txts):
 
                 random_color = get_random_color()
                 cv2.rectangle(copyImage, (x1, y1), (x2, y2), (int(random_color[0]), int(random_color[1]), int(random_color[2])), 3)
+
             cv2.imshow("image", copyImage)
             cv2.waitKey(0)
 

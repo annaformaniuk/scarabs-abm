@@ -12,7 +12,7 @@ IOU_THRESHOLD = 0.5
 # the neural network configuration
 config_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
 # the YOLO net weights file
-weights_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\backup\yolov3-custom_last.weights"
+weights_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
 
 # loading all the class labels (objects)
 labels = open(r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj.names").read().strip().split("\n")

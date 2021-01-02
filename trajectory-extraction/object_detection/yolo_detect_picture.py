@@ -90,7 +90,8 @@ class Yolo_detector():
                 bounding_box = [x, y, x + w, y + h]
                 objects.append({
                     "label": self.labels[class_ids[i]],
-                    "box": bounding_box
+                    "box": bounding_box,
+                    "confidence": confidences[i]
                 })
 
         return objects

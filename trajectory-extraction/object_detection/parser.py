@@ -4,7 +4,7 @@ import os
 import argparse
 import cv2
 
-# python parser.py --json F:\Downloads\database\Allogymnopleuri_#01\Allogymnopleuri_#01_db.grndr --photos_folder F:\Downloads\database\Allogymnopleuri_#01\Allogymnopleuri_#01_imgs --labels Beetle,Ball
+# python parser.py --json F:\Dokumente\Uni_Msc\Thesis\frames_database\Garetta_#03\Garetta_#03.grndr --photos_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Garetta_#03\Garetta_#03_imgs --output_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Garetta_#03\Garetta_#03_txt --labels "Default label"
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -12,6 +12,8 @@ ap.add_argument("-j", "--json", required=True,
                 help="Path to the json with annotations")
 ap.add_argument("-f", "--photos_folder", required=True,
                 help="Path to the images folder")
+ap.add_argument("-o", "--output_folder", required=True,
+                help="Path to where to save the annotations")
 ap.add_argument("-l", "--labels", required=True, help="Label of annotations")
 args = vars(ap.parse_args())
 args["labels"] = args["labels"].split(",")
@@ -31,7 +33,7 @@ def get_img_shape(path):
         print('error! ', path)
         return (None)
 
-def write_annotation(num, path, name, position, size):
+def write_annotation(num, path, output_path, name, position, size):
     print(num, path, name, position, size)
     name_no_ext = os.path.splitext(name)[0]
 
@@ -43,8 +45,9 @@ def write_annotation(num, path, name, position, size):
             top_left = [int(i) for i in position.split(';')]
             h_w = [int(j) for j in size.split(';')]
             bottom_right = [top_left[0] + h_w[0], top_left[1] + h_w[1]]
-            print(top_left)
-            print(bottom_right)
+            # maybe vice versa?
+            # print(top_left)
+            # print(bottom_right)
 
             # imcopy = img.copy()
             # cv2.rectangle(imcopy, (top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]), (0,225,0), 3)
@@ -67,7 +70,8 @@ def write_annotation(num, path, name, position, size):
             # cv2.imshow("image", imcopy)
             # cv2.waitKey(0)
 
-            out_path = path + '/' + name_no_ext + '.txt'
+            out_path = output_path + '/' + name_no_ext + '.txt'
+            # print(num, x, y, h, w, name_no_ext, out_path)
             if (os.path.isfile(out_path)):
                 with open(out_path, 'a') as fd:
                     line = str(num) + ' ' + str(x) + ' ' + \
@@ -103,22 +107,50 @@ for num, labelName in enumerate(args["labels"]):
                 size = None
                 name = None
                 # starting with reference for which object is in the image
+                #  and args["labels"][0] == "Default layer"
                 if (len(x['ImageBuild']['Layers']) > 0):
-                    if (len(x['ImageBuild']['Layers'][0]['Layer']['DraftItems']) > 0):
-                        index = x['ImageBuild']['ImageReference']
-                        all_properties = x['ImageBuild']['Layers'][0]['Layer']['DraftItems'][0]['DraftItem']['Properties']
+                    if(len(args["labels"]) == 1):
+                        
+                        # only if there's both and the beetle and the ball, cause otherwise there's
+                        # no way to tell which one it is
+                        # print(x['ImageBuild']['Layers'])
+                        if (len(x['ImageBuild']['Layers'][0]['Layer']['DraftItems']) == 2):
+                            for layer_index, layer_item in enumerate(x['ImageBuild']['Layers'][0]['Layer']['DraftItems']):
+                                index = x['ImageBuild']['ImageReference']
+                                all_properties = layer_item['DraftItem']['Properties']
 
-                        for prop in all_properties:
-                            if (prop['Property']['Name'] == 'Position'):
-                                position = prop['Property']['Value']
-                            if (prop['Property']['Name'] == 'Size'):
-                                size = prop['Property']['Value']
-                        if (index and position and size):
-                            print(index, position, size)
-                            for ref in image_references:
-                                if (ref['ImageReference']['Index'] == index):
-                                    path = ref['ImageReference']['File']
-                                    base_name = os.path.basename(path)
-                                    if (base_name):
-                                        write_annotation(
-                                            num, args['photos_folder'], base_name, position, size)
+                                for prop in all_properties:
+                                    if (prop['Property']['Name'] == 'Position'):
+                                        position = prop['Property']['Value']
+                                    if (prop['Property']['Name'] == 'Size'):
+                                        size = prop['Property']['Value']
+                                if (index and position and size):
+                                    print(index, position, size)
+                                    for ref in image_references:
+                                        if (ref['ImageReference']['Index'] == index):
+                                            path = ref['ImageReference']['File']
+                                            base_name = os.path.basename(path)
+                                            if (base_name):
+                                                write_annotation(
+                                                    layer_index, args['photos_folder'], args['output_folder'], base_name, position, size)
+
+
+                    else:
+                        if (len(x['ImageBuild']['Layers'][0]['Layer']['DraftItems']) > 0):
+                            index = x['ImageBuild']['ImageReference']
+                            all_properties = x['ImageBuild']['Layers'][0]['Layer']['DraftItems'][0]['DraftItem']['Properties']
+
+                            for prop in all_properties:
+                                if (prop['Property']['Name'] == 'Position'):
+                                    position = prop['Property']['Value']
+                                if (prop['Property']['Name'] == 'Size'):
+                                    size = prop['Property']['Value']
+                            if (index and position and size):
+                                print(index, position, size)
+                                for ref in image_references:
+                                    if (ref['ImageReference']['Index'] == index):
+                                        path = ref['ImageReference']['File']
+                                        base_name = os.path.basename(path)
+                                        if (base_name):
+                                            write_annotation(
+                                                num, args['photos_folder'], args['output_folder'], base_name, position, size)

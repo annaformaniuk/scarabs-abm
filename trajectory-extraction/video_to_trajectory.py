@@ -30,20 +30,23 @@ if (os.path.isfile(args["video_path"])):
         if ret:
             if (i == 1) :
                 imReference = frame.copy()
+                connected_homography = []
+                background_mask = None
                 #objects = yolo.detect_objects(frame) 
                 # received data structure:
                 # [{'label': 'Ball', 'box': [342, 174, 417, 234]}, {'label': 'Beetle', 'box': [356, 224, 391, 270]}]
                 #x1, y1, x2, y2 = objects[0]["box"]
             if (i > 1 and i < 6000 and i % 30 == 0):
-                blah = stitching.other_stitching(frame, imReference, i)
-                #warp_matrix = get_warp_matrix(imReference, frame)
-                #sz = imReference.shape
-                #imAligned = cv.warpPerspective (frame, warp_matrix, (sz[1],sz[0]), flags=cv.INTER_LINEAR + cv.WARP_INVERSE_MAP)
+                homography, ptsA, ptsB = stitching.get_homography(frame, imReference, background_mask)
+                # if (len(connected_homography) == 0):
+                imReference, mask = stitching.stitch_images(frame, imReference, homography, ptsA, ptsB)
+                # connected_homography = homography
+                #     print(connected_homography)
+                # else:
+                #     connected_homography = np.matmul(connected_homography, homography)
+                #     print(connected_homography)
+                #     imReference, mask = stitching.stitch_images(frame, imReference, connected_homography)
 
-                imReference = frame.copy()
-
-                # cv.imshow("image", imAligned)
-                # cv.waitKey(0)
             if cv.waitKey(1) & 0xFF == ord('q') or i > 6000:
                 break
         else:

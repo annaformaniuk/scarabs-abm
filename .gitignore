@@ -131,3 +131,7 @@ dmypy.json
 *.json
 
 *.grndr
+
+*.jpg
+
+*.png

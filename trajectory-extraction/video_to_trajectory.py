@@ -39,7 +39,7 @@ if (os.path.isfile(args["video_path"])):
             if (i > 1 and i < 6000 and i % 30 == 0):
                 homography, ptsA, ptsB = stitching.get_homography(frame, imReference, background_mask)
                 # if (len(connected_homography) == 0):
-                imReference, mask = stitching.stitch_images(frame, imReference, homography, ptsA, ptsB)
+                imReference, background_mask = stitching.stitch_images(frame, imReference, homography, ptsA, ptsB)
                 # connected_homography = homography
                 #     print(connected_homography)
                 # else:

@@ -6,7 +6,7 @@ import imutils
 cv2.ocl.setUseOpenCL(False)
 
 
-def detect_and_describe(image, mask=None, method=None):
+def detect_and_describe(image, mask, method=None):
     """
     Compute key points and feature descriptors using an specific method
     """
@@ -24,7 +24,11 @@ def detect_and_describe(image, mask=None, method=None):
         descriptor = cv2.ORB_create()  # 500?
 
     # get keypoints and descriptors
-    (kps, features) = descriptor.detectAndCompute(image, None)
+    if(mask is not None):
+        gray_mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        (kps, features) = descriptor.detectAndCompute(image, mask=gray_mask)
+    else:
+        (kps, features) = descriptor.detectAndCompute(image, None)
 
     return (kps, features)
 
@@ -100,11 +104,17 @@ def get_homography(img1_color, img2_color, background_mask):
 
     # Find keypoints and descriptors.
     kp1, d1 = detect_and_describe(img1, mask=None, method=feature_extractor)
-    kp2, d2 = detect_and_describe(img2, background_mask, method=feature_extractor)
+    kp2, d2 = detect_and_describe(
+        img2, background_mask, method=feature_extractor)
 
     # Match features between the two images.
     # Sort them on the basis of their Hamming distance.
     matches = match_keypoints_BF(d1, d2, method=feature_matching)
+    # img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:100],
+    #                         None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    # fig = plt.figure(figsize=(16,8))
+    # plt.imshow(img3)
+    # plt.show()
 
     # Take the top 90 % matches forward.
     matches = matches[:int(len(matches)*90)]
@@ -116,24 +126,25 @@ def get_homography(img1_color, img2_color, background_mask):
 
 
 def stitch_images(img1_color, img2_color, homography, ptsA, ptsB):
-    cv2.imshow('img2_color', img2_color)
-    cv2.imshow('img1_color', img1_color)
-    
     height1, width1, depth1 = img1_color.shape
     height2, width2, depth2 = img2_color.shape
     height = height1 + height2
     width = width1 + width2
 
     # all this not to crop the left and top sides because they will have negative values
-    input_corners = np.array([[0, 0], [width1, 0], [0, height1], [width1, height1]], dtype=np.float32)
-    output_corners = cv2.perspectiveTransform(input_corners[np.newaxis], homography)
-    bounding_rect = cv2.boundingRect(output_corners) # x,y,w,h
+    input_corners = np.array([[0, 0], [width1, 0], [0, height1], [
+                             width1, height1]], dtype=np.float32)
+    output_corners = cv2.perspectiveTransform(
+        input_corners[np.newaxis], homography)
+    bounding_rect = cv2.boundingRect(output_corners)  # x,y,w,h
 
-    output_quad  = np.array([[0, 0], [width2, 0], [0, height2], [width2, height2]])
+    output_quad = np.array(
+        [[0, 0], [width2, 0], [0, height2], [width2, height2]])
 
     ptsA_new = []
     for point in ptsA:
-        ptsA_new.append(np.array([int(point[0] + bounding_rect[0]), int(point[1] + bounding_rect[1])], dtype=np.float32))
+        ptsA_new.append(np.array(
+            [int(point[0] + bounding_rect[0]), int(point[1] + bounding_rect[1])], dtype=np.float32))
 
     ptsA_new = np.array(ptsA_new, dtype=np.float32)
 
@@ -144,9 +155,9 @@ def stitch_images(img1_color, img2_color, homography, ptsA, ptsB):
     # colored image wrt the reference image.
     transformed_img = cv2.warpPerspective(img1_color,
                                           homography_new, (width, height))
-    cv2.imshow('transformed_img', transformed_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
+    img2_padded = cv2.copyMakeBorder(img2_color, abs(bounding_rect[0]), height - height2 - abs(bounding_rect[0]), abs(
+        bounding_rect[1]), width - width2 - abs(bounding_rect[1]), cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
     gray = cv2.cvtColor(transformed_img, cv2.COLOR_BGR2GRAY)
     overlay_mask = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)[1]
@@ -157,14 +168,27 @@ def stitch_images(img1_color, img2_color, homography, ptsA, ptsB):
     overlay_mask = cv2.cvtColor(overlay_mask, cv2.COLOR_GRAY2BGR)
     background_mask = cv2.cvtColor(background_mask, cv2.COLOR_GRAY2BGR)
 
-    ref_part = (img2_color * (1 / 255.0)) * (background_mask * (1 / 255.0))
+    ref_part = (img2_padded * (1 / 255.0)) * (background_mask * (1 / 255.0))
     overlay_part = (transformed_img * (1 / 255.0)) * \
         (overlay_mask * (1 / 255.0))
     dst = np.uint8(cv2.addWeighted(ref_part, 255.0, overlay_part, 255.0, 0.0))
 
+    gray = cv2.cvtColor(dst, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
+
+    # find contours
+    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+
+    c = max(cnts, key=cv2.contourArea)
+    (x,y,w,h) = cv2.boundingRect(c)
+
+    dst = dst[y:y+h, x:x+w]
+    overlay_mask = overlay_mask[y:y+h, x:x+w]
+
     cv2.imshow('dst', dst)
-    cv2.imshow('mask', background_mask)
+    cv2.imshow('mask', overlay_mask)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    return transformed_img, background_mask
+    return dst, overlay_mask

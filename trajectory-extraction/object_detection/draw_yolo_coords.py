@@ -5,7 +5,7 @@ import argparse
 import cv2
 import numpy as np
 #F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj
-# python draw_yolo_coords.py --photos_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Garetta_#03\Garetta_#03_imgs --annotations_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Garetta_#03\Garetta_#03_txt
+# python draw_yolo_coords.py --photos_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Lamarcki_#09\Lamarcki_#09_imgs --annotations_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Lamarcki_#09\Lamarcki_#09_txt
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -66,7 +66,21 @@ while i < len(txts):
                 random_color = get_random_color(floats[0])
                 cv2.rectangle(copyImage, (x1, y1), (x2, y2), (int(random_color[0]), int(random_color[1]), int(random_color[2])), 3)
 
-            cv2.imshow("image", copyImage)
+
+            #percent by which the image is resized
+            scale_percent = 50
+
+            #calculate the 50 percent of original dimensions
+            width = int(copyImage.shape[1] * scale_percent / 100)
+            height = int(copyImage.shape[0] * scale_percent / 100)
+            # dsize
+            dsize = (width, height)
+
+            # resize image
+            output = cv2.resize(copyImage, dsize)
+
+            cv2.imshow(name_no_ext, output)
             cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
     i += 1

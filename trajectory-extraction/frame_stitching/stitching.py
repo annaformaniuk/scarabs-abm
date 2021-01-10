@@ -25,8 +25,8 @@ def detect_and_describe(image, mask, method=None):
 
     # get keypoints and descriptors
     if(mask is not None):
-        gray_mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        (kps, features) = descriptor.detectAndCompute(image, mask=gray_mask)
+        # gray_mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        (kps, features) = descriptor.detectAndCompute(image, mask)
     else:
         (kps, features) = descriptor.detectAndCompute(image, None)
 
@@ -92,7 +92,7 @@ def calculate_homography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh
         return None
 
 
-def get_homography(img1_color, img2_color, background_mask):
+def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     # img1 align, img2 ref
 
     feature_extractor = 'orb'  # one of 'sift', 'surf', 'brisk', 'orb'
@@ -103,18 +103,18 @@ def get_homography(img1_color, img2_color, background_mask):
     img2 = cv2.cvtColor(img2_color, cv2.COLOR_BGR2GRAY)
 
     # Find keypoints and descriptors.
-    kp1, d1 = detect_and_describe(img1, mask=None, method=feature_extractor)
+    kp1, d1 = detect_and_describe(img1, mask=foreground_mask, method=feature_extractor)
     kp2, d2 = detect_and_describe(
-        img2, background_mask, method=feature_extractor)
+        img2, mask=background_mask, method=feature_extractor)
 
     # Match features between the two images.
     # Sort them on the basis of their Hamming distance.
     matches = match_keypoints_BF(d1, d2, method=feature_matching)
-    # img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:100],
-    #                         None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    # fig = plt.figure(figsize=(16,8))
-    # plt.imshow(img3)
-    # plt.show()
+    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:100],
+                            None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    fig = plt.figure(figsize=(16,8))
+    plt.imshow(img3)
+    plt.show()
 
     # Take the top 90 % matches forward.
     matches = matches[:int(len(matches)*90)]
@@ -122,10 +122,6 @@ def get_homography(img1_color, img2_color, background_mask):
     (matches, homography, status, ptsA, ptsB) = calculate_homography(
         kp1, kp2, d1, d2, matches, reprojThresh=4)
 
-    return homography, ptsA, ptsB
-
-
-def stitch_images(img1_color, img2_color, homography, ptsA, ptsB):
     height1, width1, depth1 = img1_color.shape
     height2, width2, depth2 = img2_color.shape
     height = height1 + height2
@@ -156,6 +152,11 @@ def stitch_images(img1_color, img2_color, homography, ptsA, ptsB):
     transformed_img = cv2.warpPerspective(img1_color,
                                           homography_new, (width, height))
 
+    transformed_mask = cv2.warpPerspective(foreground_mask,
+                                          homography_new, (width, height)) 
+    
+    print("bounding rect", bounding_rect)
+
     img2_padded = cv2.copyMakeBorder(img2_color, abs(bounding_rect[0]), height - height2 - abs(bounding_rect[0]), abs(
         bounding_rect[1]), width - width2 - abs(bounding_rect[1]), cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
@@ -185,9 +186,12 @@ def stitch_images(img1_color, img2_color, homography, ptsA, ptsB):
 
     dst = dst[y:y+h, x:x+w]
     overlay_mask = overlay_mask[y:y+h, x:x+w]
+    overlay_mask = cv2.cvtColor(overlay_mask, cv2.COLOR_BGR2GRAY)
+    transformed_mask = transformed_mask[y:y+h, x:x+w]
+    overlay_mask = cv2.bitwise_and(overlay_mask, transformed_mask)
 
+    cv2.imshow('overlay_mask', overlay_mask)
     cv2.imshow('dst', dst)
-    cv2.imshow('mask', overlay_mask)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 

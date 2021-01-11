@@ -20,11 +20,23 @@ class Yolo_detector():
         self.labels = open(r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj.names").read(
         ).strip().split("\n")
         # generating colors for each object for later plotting
-        #colors = np.random.randint(
-            #0, 255, size=(len(labels), 3), dtype="uint8")
+        # colors = np.random.randint(
+        # 0, 255, size=(len(labels), 3), dtype="uint8")
 
         # load the YOLO network
         self.net = cv2.dnn.readNetFromDarknet(config_path, weights_path)
+        
+
+    """
+    # Name: detect_objects(self, image)
+    # Description: yes
+    # @args:
+    #    all_points: the frame on which beetle or ball are to be searched for
+    # @return
+        list of objects:
+        [{'label': 'Ball', 'box': [342, 174, 417, 234]}, {'label': 'Beetle', 'box': [356, 224, 391, 270]}]
+                #x1, y1, x2, y2 = objects[0]["box"]
+    """
 
     def detect_objects(self, image):
         h, w = image.shape[:2]
@@ -82,7 +94,7 @@ class Yolo_detector():
             boxes, confidences, self.SCORE_THRESHOLD, self.IOU_THRESHOLD)
 
         objects = []
-    
+
         if len(idxs) > 0:
             for i in idxs.flatten():
                 x, y = boxes[i][0], boxes[i][1]

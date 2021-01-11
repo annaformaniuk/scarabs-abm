@@ -9,6 +9,7 @@ from frame_stitching import stitching
 from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
+from object_detection.shadow_detection import detect_shadow
 # python video_to_trajectory.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
 
 
@@ -62,16 +63,19 @@ if (os.path.isfile(args["video_path"])):
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
                 background_mask = mask_out_objects(imReference, objects)
+                # masking out the hand with the camera too, hopefully
+                largest_shadow = detect_shadow(frame)
+                background_mask = cv2.bitwise_and(background_mask, largest_shadow)
 
                 # landscapeReference = contours.detect_landscape(frame)
 
-                # received data structure:
-                # [{'label': 'Ball', 'box': [342, 174, 417, 234]}, {'label': 'Beetle', 'box': [356, 224, 391, 270]}]
-                #x1, y1, x2, y2 = objects[0]["box"]
             if (i > 1 and i < 6000 and i % 30 == 0):
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
                 foreground_mask = mask_out_objects(frame, objects)
+                # masking out the hand with the camera too, hopefully
+                largest_shadow = detect_shadow(frame)
+                foreground_mask = cv2.bitwise_and(foreground_mask, largest_shadow)
 
                 imReference, background_mask = stitching.stitch_images(
                     frame, imReference, foreground_mask, background_mask)

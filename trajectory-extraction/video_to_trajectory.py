@@ -42,7 +42,7 @@ def mask_out_objects(frame, objects):
 if (os.path.isfile(args["video_path"])):
     cap = cv2.VideoCapture(args["video_path"])
     yolo = Yolo_detector()
-    contours = Contours_detector()
+    # contours = Contours_detector()
 
     while True:
         ret, frame = cap.read()
@@ -61,9 +61,9 @@ if (os.path.isfile(args["video_path"])):
 
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
-                foreground_mask = mask_out_objects(imReference, objects)
+                background_mask = mask_out_objects(imReference, objects)
 
-                landscapeReference = contours.detect_landscape(frame)
+                # landscapeReference = contours.detect_landscape(frame)
 
                 # received data structure:
                 # [{'label': 'Ball', 'box': [342, 174, 417, 234]}, {'label': 'Beetle', 'box': [356, 224, 391, 270]}]

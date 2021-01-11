@@ -23,12 +23,17 @@ def detect_and_describe(image, mask, method=None):
     elif method == 'orb':
         descriptor = cv2.ORB_create()  # 500?
 
+    cv2.imshow('mask to search keypoints', mask)
+    cv2.imshow('frame to search keypoints', image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     # get keypoints and descriptors
     if(mask is not None):
         # gray_mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         (kps, features) = descriptor.detectAndCompute(image, mask)
     else:
-        (kps, features) = descriptor.detectAndCompute(image, None)
+        (kps, features) = descriptor.detectAndCompute(image, mask)
 
     return (kps, features)
 
@@ -98,21 +103,29 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     feature_extractor = 'orb'  # one of 'sift', 'surf', 'brisk', 'orb'
     feature_matching = 'bf'
 
+    kernel = np.array([[-1, -1, -1],
+                       [-1, 9, -1],
+                       [-1, -1, -1]])
+
     # Convert to grayscale.
     img1 = cv2.cvtColor(img1_color, cv2.COLOR_BGR2GRAY)
     img2 = cv2.cvtColor(img2_color, cv2.COLOR_BGR2GRAY)
 
+    img1 = cv2.fastNlMeansDenoising(img1, 30.0, 7, 21)
+    img2 = cv2.fastNlMeansDenoising(img2, 30.0, 7, 21)
+
     # Find keypoints and descriptors.
-    kp1, d1 = detect_and_describe(img1, mask=foreground_mask, method=feature_extractor)
+    kp1, d1 = detect_and_describe(
+        img1, mask=foreground_mask, method=feature_extractor)
     kp2, d2 = detect_and_describe(
         img2, mask=background_mask, method=feature_extractor)
 
     # Match features between the two images.
     # Sort them on the basis of their Hamming distance.
     matches = match_keypoints_BF(d1, d2, method=feature_matching)
-    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:100],
-                            None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    fig = plt.figure(figsize=(16,8))
+    img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100],
+                           None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    fig = plt.figure(figsize=(16, 8))
     plt.imshow(img3)
     plt.show()
 
@@ -153,8 +166,8 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
                                           homography_new, (width, height))
 
     transformed_mask = cv2.warpPerspective(foreground_mask,
-                                          homography_new, (width, height)) 
-    
+                                           homography_new, (width, height))
+
     print("bounding rect", bounding_rect)
 
     img2_padded = cv2.copyMakeBorder(img2_color, abs(bounding_rect[0]), height - height2 - abs(bounding_rect[0]), abs(
@@ -178,11 +191,12 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
 
     # find contours
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cv2.findContours(
+        thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
 
     c = max(cnts, key=cv2.contourArea)
-    (x,y,w,h) = cv2.boundingRect(c)
+    (x, y, w, h) = cv2.boundingRect(c)
 
     dst = dst[y:y+h, x:x+w]
     overlay_mask = overlay_mask[y:y+h, x:x+w]

@@ -5,7 +5,7 @@ import time
 
 class Yolo_detector():
     def __init__(self):
-        print("Initializing Detector class")
+        print("Initializing Yolo detector class")
 
         self.CONFIDENCE = 0.5
         self.SCORE_THRESHOLD = 0.5

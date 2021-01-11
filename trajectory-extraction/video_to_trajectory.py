@@ -8,7 +8,7 @@ import argparse
 from frame_stitching import stitching
 from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
-
+from contours.contours_hed import Contours_detector
 # python video_to_trajectory.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
 
 
@@ -31,10 +31,10 @@ def mask_out_objects(frame, objects):
         masked_objects[bounds[1]:bounds[3], bounds[0]:bounds[2]
                        ] = black_img[bounds[1]:bounds[3], bounds[0]:bounds[2]]
 
-    cv2.imshow('mask', masked_objects)
-    cv2.imshow('frame', frame)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('mask', masked_objects)
+    # cv2.imshow('frame', frame)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     return masked_objects
 
@@ -42,6 +42,7 @@ def mask_out_objects(frame, objects):
 if (os.path.isfile(args["video_path"])):
     cap = cv2.VideoCapture(args["video_path"])
     yolo = Yolo_detector()
+    contours = Contours_detector()
 
     while True:
         ret, frame = cap.read()
@@ -61,6 +62,8 @@ if (os.path.isfile(args["video_path"])):
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
                 foreground_mask = mask_out_objects(imReference, objects)
+
+                landscapeReference = contours.detect_landscape(frame)
 
                 # received data structure:
                 # [{'label': 'Ball', 'box': [342, 174, 417, 234]}, {'label': 'Beetle', 'box': [356, 224, 391, 270]}]

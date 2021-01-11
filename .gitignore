@@ -135,3 +135,5 @@ dmypy.json
 *.jpg
 
 *.png
+
+trajectory-extraction/contours/hed_model/

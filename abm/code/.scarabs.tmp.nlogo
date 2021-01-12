@@ -326,6 +326,12 @@ to wander  ;; turtle procedure
       ] [
         ; got stuck somewhere somehow
         set nested true
+        set-current-plot "Walked distance vs stopping time"
+        set-current-plot-pen "pen-0"
+        set-plot-pen-mode 2
+        set-plot-pen-color one-of base-colors
+        plotxy ticks walked-distance
+
         set color green
         let beetles-ball ball-id
         ask balls with [ball-who = beetles-ball] [
@@ -351,6 +357,11 @@ to wander  ;; turtle procedure
   ] [
     ; nest if far enough and haven't seen anyone for long enough
     set nested true
+    set-current-plot "Walked distance vs stopping time"
+    set-current-plot-pen "pen-0"
+    set-plot-pen-mode 2
+    set-plot-pen-color one-of base-colors
+    plotxy ticks walked-distance
     set color grey
     let beetles-ball ball-id
     ask balls with [ball-who = beetles-ball] [
@@ -541,6 +552,24 @@ false
 "" ""
 PENS
 "default" 5.0 1 -14439633 true "" "set-plot-y-range 0 10\nhistogram [initial-heading] of beetles\nset-plot-pen-interval 30"
+
+PLOT
+298
+189
+504
+345
+Walked distance vs stopping time
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"pen-0" 1.0 0 -7500403 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?

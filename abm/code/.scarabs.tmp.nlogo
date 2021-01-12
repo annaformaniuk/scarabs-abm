@@ -37,6 +37,7 @@ beetles-own [
   speed
   secondary-heading
   course-deviation
+  heading-deviation-degrees
 ]
 
 balls-own [
@@ -151,6 +152,7 @@ to create-beetle ; beetle setup
     set walked-distance 0
     set course-deviation 0
     set pronotum-width random-in-range 14 21
+    set heading-deviation-degrees 0
   ]
 end
 
@@ -278,8 +280,10 @@ to wander  ;; turtle procedure
         if minimum-diff < 30 and encounter-reset-heading >= 30 [
           ifelse other-heading > heading-degrees [
             set heading-degrees heading-degrees - 15
+            set heading-deviation-degrees heading-deviation-degrees - 15
           ] [
             set heading-degrees heading-degrees + 15
+            set heading-deviation-degrees heading-deviation-degrees + 15
           ]
           set encounter-reset-heading 0
         ]
@@ -310,6 +314,7 @@ to wander  ;; turtle procedure
 
       ifelse found-heading = true and secondary-heading != 0 [
         set course-deviation course-deviation + 1
+        set heading-deviation-degrees heading-deviation-degrees - secondary-heading
         ifelse course-deviation > max-deviation [
           ifelse  dance-counter < dance-duration [
             dance
@@ -342,6 +347,7 @@ to wander  ;; turtle procedure
       ; if there is no obstacle in front, just walk depending on
       ; how rough the patch is
       set secondary-heading 0
+      set heading-deviation-degrees 0
       ifelse course-deviation = 0 [
         push-ball heading-degrees
       ] [
@@ -570,6 +576,24 @@ false
 "" ""
 PENS
 "pen-0" 1.0 0 -7500403 true "" ""
+
+PLOT
+293
+383
+493
+533
+Heading-deviation
+NIL
+NIL
+-360.0
+360.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "set-plot-y-range 0 10\nhistogram [heading-deviation-degrees] of beetles\nset-plot-pen-interval 30"
 
 @#$#@#$#@
 ## WHAT IS IT?

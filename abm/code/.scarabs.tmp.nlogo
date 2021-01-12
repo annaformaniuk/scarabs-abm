@@ -578,10 +578,10 @@ PENS
 "pen-0" 1.0 0 -7500403 true "" ""
 
 PLOT
-293
+287
 383
-493
-533
+517
+545
 Heading-deviation
 NIL
 NIL
@@ -593,7 +593,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "set-plot-y-range 0 10\nhistogram [heading-deviation-degrees] of beetles\nset-plot-pen-interval 30"
+"default" 1.0 1 -10141563 true "" "set-plot-y-range 0 10\nhistogram [heading-deviation-degrees] of beetles\nset-plot-pen-interval 30"
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -11,6 +11,9 @@ globals [
   minimum-last-encounter-time
   dance-duration
   max-deviation
+  initial-dance
+  deviation-dance
+  free-path-dance
 ]
 
 breed [beetles beetle]
@@ -62,6 +65,9 @@ to setup
   set minimum-last-encounter-time 30 ; in ticks
   set dance-duration 20 ; in ticks
   set max-deviation 20
+  set initial-dance 0
+  set deviation-dance 0
+  set free-path-dance 0
   ; py:setup py:python
 end
 
@@ -193,6 +199,7 @@ to establish-heading
     dance
   ] [
     set dance-counter 0
+    set initial-dance initial-dance + 1
     let visible-beetles beetles in-radius 50 with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in radius 10 to look at
 
     ifelse count visible-beetles >= 1 [
@@ -320,6 +327,7 @@ to wander  ;; turtle procedure
             dance
           ] [
             set dance-counter 0
+            set deviation-dance deviation-dance + 1
             set course-deviation 0
             push-ball secondary-heading
           ]
@@ -355,6 +363,7 @@ to wander  ;; turtle procedure
           dance
         ] [
           set dance-counter 0
+          set free-path-dance free-path-dance + 1
           set course-deviation 0
           push-ball heading-degrees
         ]
@@ -523,7 +532,7 @@ NIL
 
 PLOT
 27
-189
+174
 239
 345
 Speed
@@ -560,12 +569,12 @@ PENS
 "default" 5.0 1 -14439633 true "" "set-plot-y-range 0 10\nhistogram [initial-heading] of beetles\nset-plot-pen-interval 30"
 
 PLOT
-298
-189
-504
+289
+174
+516
 345
-Walked distance vs stopping time
-NIL
+Walked distance vs nesting time
+ticks
 NIL
 0.0
 10.0
@@ -575,7 +584,7 @@ true
 false
 "" ""
 PENS
-"pen-0" 1.0 0 -7500403 true "" ""
+"pen-0" 1.0 2 -7500403 true "" ""
 
 PLOT
 287
@@ -594,6 +603,39 @@ false
 "" ""
 PENS
 "default" 1.0 1 -10141563 true "" "set-plot-y-range 0 10\nhistogram [heading-deviation-degrees] of beetles\nset-plot-pen-interval 30"
+
+MONITOR
+313
+10
+518
+55
+Dancing when establishing heading
+initial-dance
+17
+1
+11
+
+MONITOR
+283
+59
+518
+104
+Dancing when course deviates too much
+deviation-dance
+17
+1
+11
+
+MONITOR
+307
+107
+519
+152
+Dancing when the path is free again
+free-path-dance
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?

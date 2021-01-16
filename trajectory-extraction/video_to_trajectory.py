@@ -5,7 +5,7 @@ import string
 import os
 import re
 import argparse
-from frame_stitching import stitching
+from frame_stitching import stitching, stitching_alt
 from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
@@ -77,8 +77,11 @@ if (os.path.isfile(args["video_path"])):
                 largest_shadow = detect_shadow(frame)
                 foreground_mask = cv2.bitwise_and(foreground_mask, largest_shadow)
 
-                imReference, background_mask = stitching.stitch_images(
-                    frame, imReference, foreground_mask, background_mask)
+                # imReference, background_mask = stitching.stitch_images(
+                #     frame, imReference, foreground_mask, background_mask)
+
+                imReference, background_mask = stitching_alt.other_stitching(
+                    frame, imReference, foreground_mask, background_mask, i)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
                 break

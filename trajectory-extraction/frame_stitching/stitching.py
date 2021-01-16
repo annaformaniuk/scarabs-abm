@@ -23,8 +23,8 @@ def detect_and_describe(image, mask, method=None):
     elif method == 'orb':
         descriptor = cv2.ORB_create()  # 500?
 
-    cv2.imshow('mask to search keypoints', mask)
-    cv2.imshow('frame to search keypoints', image)
+    # cv2.imshow('mask to search keypoints', mask)
+    # cv2.imshow('frame to search keypoints', image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -123,11 +123,11 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     # Match features between the two images.
     # Sort them on the basis of their Hamming distance.
     matches = match_keypoints_BF(d1, d2, method=feature_matching)
-    img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100],
-                           None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    fig = plt.figure(figsize=(16, 8))
-    plt.imshow(img3)
-    plt.show()
+    # img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100],
+    #                        None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    # fig = plt.figure(figsize=(16, 8))
+    # plt.imshow(img3)
+    # plt.show()
 
     # Take the top 90 % matches forward.
     matches = matches[:int(len(matches)*90)]
@@ -146,9 +146,6 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     output_corners = cv2.perspectiveTransform(
         input_corners[np.newaxis], homography)
     bounding_rect = cv2.boundingRect(output_corners)  # x,y,w,h
-
-    output_quad = np.array(
-        [[0, 0], [width2, 0], [0, height2], [width2, height2]])
 
     ptsA_new = []
     for point in ptsA:

@@ -10,10 +10,10 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, fr
     # img1 align, img2 ref
 
     img2_padded = cv2.copyMakeBorder(
-        img2_color, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        img2_color, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
     height, width, depth = img2_color.shape
     background_mask_padded = cv2.copyMakeBorder(
-        background_mask, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        background_mask, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
     # Convert to grayscale.
     img1 = cv2.cvtColor(img1_color, cv2.COLOR_BGR2GRAY)

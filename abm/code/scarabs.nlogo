@@ -457,7 +457,7 @@ to-report source? ; patch reporter
 end
 
 to-report obstacle? [angle]  ; turtle procedure to see if patch ahead at some angle is an obstacle
-  report black = [pcolor] of patch-at-heading-and-distance angle 1
+  report ((black = [pcolor] of patch-at-heading-and-distance angle 3) or (black = [pcolor] of patch-at-heading-and-distance angle 2) or (black = [pcolor] of patch-at-heading-and-distance angle 1))
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

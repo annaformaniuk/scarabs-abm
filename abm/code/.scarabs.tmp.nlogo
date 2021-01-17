@@ -402,7 +402,7 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   let step-length pronotum-width * 0.035
   ask patch-ahead 1 [
     set step-length step-length - roughness
-    if step-length <  [
+    if step-length < 0.1 [
     set step-length 0.1]
     ;set step-length round (step-length * 10)
   ]
@@ -457,7 +457,7 @@ to-report source? ; patch reporter
 end
 
 to-report obstacle? [angle]  ; turtle procedure to see if patch ahead at some angle is an obstacle
-  report black = [pcolor] of patch-at-heading-and-distance angle 1
+  report *black = [pcolor] of patch-at-heading-and-distance angle 3
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

@@ -398,6 +398,8 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   let step-length pronotum-width * 0.035
   ask patch-ahead 1 [
     set step-length step-length - roughness
+    if step-length < 0.1 [
+    set step-length 0.1]
     ;set step-length round (step-length * 10)
   ]
   ; show step-length

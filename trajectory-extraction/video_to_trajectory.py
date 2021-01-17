@@ -43,7 +43,8 @@ def mask_out_objects(frame, objects):
 if (os.path.isfile(args["video_path"])):
     cap = cv2.VideoCapture(args["video_path"])
     yolo = Yolo_detector()
-    # contours = Contours_detector()
+    contours = Contours_detector()
+    kernel = np.ones((15, 15), np.uint8)
 
     while True:
         ret, frame = cap.read()
@@ -65,9 +66,15 @@ if (os.path.isfile(args["video_path"])):
                 background_mask = mask_out_objects(imReference, objects)
                 # masking out the hand with the camera too, hopefully
                 largest_shadow = detect_shadow(frame)
-                background_mask = cv2.bitwise_and(background_mask, largest_shadow)
+                background_mask = cv2.bitwise_and(
+                    background_mask, largest_shadow)
 
-                # landscapeReference = contours.detect_landscape(frame)
+                # detecting contours for the landscape and masking out the eroded objects
+                background_mask_eroded = cv2.erode(
+                    background_mask, kernel, iterations=3)
+                landscape = contours.detect_landscape(frame)
+                landscapeReference = cv2.bitwise_and(
+                    landscape, landscape, mask=background_mask_eroded)
 
             if (i > 1 and i < 6000 and i % 30 == 0):
                 objects = yolo.detect_objects(frame)
@@ -75,13 +82,19 @@ if (os.path.isfile(args["video_path"])):
                 foreground_mask = mask_out_objects(frame, objects)
                 # masking out the hand with the camera too, hopefully
                 largest_shadow = detect_shadow(frame)
-                foreground_mask = cv2.bitwise_and(foreground_mask, largest_shadow)
+                foreground_mask = cv2.bitwise_and(
+                    foreground_mask, largest_shadow)
 
-                # imReference, background_mask = stitching.stitch_images(
-                #     frame, imReference, foreground_mask, background_mask)
+                # detecting contours for the landscape and masking out the eroded objects
+                foreground_mask_eroded = cv2.erode(
+                    foreground_mask, kernel, iterations=3)
+                landscape = contours.detect_landscape(frame)
+                landscapeFront = cv2.bitwise_and(
+                    landscape, landscape, mask=foreground_mask_eroded)
 
-                imReference, background_mask = stitching_alt.other_stitching(
-                    frame, imReference, foreground_mask, background_mask, i)
+                # finally stitching the images together and replacing variables
+                imReference, background_mask, landscapeReference = stitching_alt.other_stitching(
+                    frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, i)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
                 break

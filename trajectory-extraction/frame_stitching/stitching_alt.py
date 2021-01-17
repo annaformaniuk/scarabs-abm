@@ -6,7 +6,7 @@ import imutils
 cv2.ocl.setUseOpenCL(False)
 
 
-def other_stitching(img1_color, img2_color, foreground_mask, background_mask, frame_index):
+def other_stitching(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, frame_index):
     # img1 align, img2 ref
 
     img2_padded = cv2.copyMakeBorder(
@@ -14,6 +14,8 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, fr
     height, width, depth = img2_color.shape
     background_mask_padded = cv2.copyMakeBorder(
         background_mask, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    landscape_ref_padded = cv2.copyMakeBorder(
+        landscapeReference, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
     # Convert to grayscale.
     img1 = cv2.cvtColor(img1_color, cv2.COLOR_BGR2GRAY)
@@ -66,6 +68,9 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, fr
     transformed_mask = cv2.warpPerspective(foreground_mask,
                                            homography, (width, height))
 
+    transformed_landscape = cv2.warpPerspective(ladscapeFront,
+                                           homography, (width, height))
+
     gray = cv2.cvtColor(transformed_img, cv2.COLOR_BGR2GRAY)
     overlay_mask = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)[1]
     overlay_mask = cv2.erode(
@@ -79,6 +84,11 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, fr
     overlay_part = (transformed_img * (1 / 255.0)) * \
         (overlay_mask * (1 / 255.0))
     dst = np.uint8(cv2.addWeighted(ref_part, 255.0, overlay_part, 255.0, 0.0))
+
+    landscape_part = (landscape_ref_padded * (1 / 255.0)) * (background_mask * (1 / 255.0))
+    landscape_overlay_part = (transformed_landscape * (1 / 255.0)) * \
+        (overlay_mask * (1 / 255.0))
+    landscape_dst = np.uint8(cv2.addWeighted(landscape_part, 255.0, landscape_overlay_part, 255.0, 0.0))
 
     gray = cv2.cvtColor(dst, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
@@ -96,11 +106,14 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, fr
     overlay_mask = cv2.cvtColor(overlay_mask, cv2.COLOR_BGR2GRAY)
     transformed_mask = transformed_mask[y:y+h, x:x+w]
     overlay_mask = cv2.bitwise_and(overlay_mask, transformed_mask)
+    landscape_dst = landscape_dst[y:y+h, x:x+w]
 
     cv2.imwrite(str(frame_index) + '.jpg', dst)
-    cv2.imshow('overlay_mask', overlay_mask)
-    cv2.imshow('dst', dst)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.imwrite(str(frame_index) + '_landscape.jpg', landscape_dst)
+    # cv2.imshow('overlay_mask', overlay_mask)
+    # cv2.imshow('dst', dst)
+    # cv2.imshow('landscape_dst', landscape_dst)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-    return dst, overlay_mask
+    return dst, overlay_mask, landscape_dst

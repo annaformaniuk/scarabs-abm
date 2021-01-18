@@ -41,6 +41,7 @@ beetles-own [
   secondary-heading
   course-deviation
   heading-deviation-degrees
+  starting-tick
 ]
 
 balls-own [
@@ -163,6 +164,7 @@ to create-beetle ; beetle setup
     set course-deviation 0
     set pronotum-width random-in-range 14 21
     set heading-deviation-degrees 0
+    set starting-tick ticks
   ]
 end
 
@@ -347,7 +349,8 @@ to wander  ;; turtle procedure
         set-current-plot-pen "pen-0"
         set-plot-pen-mode 2
         set-plot-pen-color one-of base-colors
-        plotxy ticks walked-distance
+        let walk-duration ticks - starting-tick
+        plotxy walk-duration walked-distance
 
         set color green
         let beetles-ball ball-id
@@ -380,7 +383,8 @@ to wander  ;; turtle procedure
     set-current-plot-pen "pen-0"
     set-plot-pen-mode 2
     set-plot-pen-color one-of base-colors
-    plotxy ticks walked-distance
+    let walk-duration ticks - starting-tick
+    plotxy walk-duration walked-distance
     set color grey
     let beetles-ball ball-id
     ask balls with [ball-who = beetles-ball] [

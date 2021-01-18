@@ -1,5 +1,6 @@
 extensions [
   py
+  array
 ]
 
 globals [
@@ -37,7 +38,8 @@ beetles-own [
   encounter-reset-heading
   nested
   walked-distance
-  speed
+  average-speed
+  speeds-list
   secondary-heading
   course-deviation
   heading-deviation-degrees
@@ -145,7 +147,7 @@ to go  ; forever button
     ask beetles [
     move
   ]
-    show mean [speed] of beetles]
+    show mean [average-speed] of beetles]
 
   tick
 end
@@ -165,6 +167,7 @@ to create-beetle ; beetle setup
     set pronotum-width random-in-range 14 21
     set heading-deviation-degrees 0
     set starting-tick ticks
+    set speeds-list []
   ]
 end
 
@@ -397,7 +400,7 @@ end
 to dance
   set heading heading + 20
   set dance-counter dance-counter + 1
-  set speed 0
+  set average-speed 0
 end
 
 to push-ball [#some-heading] ; beetle and ball actually moving
@@ -414,7 +417,9 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   ;if random 10 < step-length [
   fd step-length
   set walked-distance walked-distance + (step-length * patch-length)
-  set speed (step-length / tick-duration) * 10
+  let speed (step-length / tick-duration) * 10
+  set speeds-list lput speed speeds-list
+  set average-speed mean speeds-list
   ; plotting
   ;let random-color one-of base-colors
   ;set-plot-pen-color random-color plotxy who walked-distance

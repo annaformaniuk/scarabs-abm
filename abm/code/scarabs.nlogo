@@ -550,7 +550,7 @@ PLOT
 174
 239
 345
-Speed
+Cumulative average speed
 NIL
 Centimeters per tick
 0.0
@@ -561,9 +561,9 @@ true
 false
 "" ""
 PENS
-"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot mean [speed] of beetles with [speed > 0]]"
-"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot min [speed] of beetles with [speed > 0]]"
-"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot max [speed] of beetles with [speed > 0]]"
+"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and average-speed > 0 ] > 0 [plot mean [average-speed] of beetles with [average-speed > 0]]"
+"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and average-speed > 0 ] > 0 [plot min [average-speed] of beetles with [average-speed > 0]]"
+"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and average-speed > 0 ] > 0 [plot max [average-speed] of beetles with [average-speed > 0]]"
 
 PLOT
 26

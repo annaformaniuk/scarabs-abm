@@ -151,7 +151,7 @@ to go  ; forever button
   ]
     show mean [average-speed] of beetles
 
-
+    update-heading-plot
 
   ]
   tick
@@ -188,14 +188,19 @@ to move  ; turtle procedure
 end
 
 to update-heading-plot
-  set-current-plot-pen (word who)
-  set-plot-pen-mode 1
-  set-plot-y-range 0 10
-  set-plot-pen-interval 30
-  set-plot-pen-color one-of base-colors
-
-
-  histogram headings-deviation-list
+  set-current-plot "Heading-deviation"
+  clear-plot
+  ask beetles
+  [
+    let temp_string (word who)
+    create-temporary-plot-pen temp_string
+    set-current-plot-pen temp_string
+    set-plot-pen-mode 1
+    set-plot-y-range 0 500
+    set-plot-pen-interval 30
+    set-plot-pen-color
+    histogram headings-deviation-list
+  ]
 end
 
 
@@ -315,11 +320,11 @@ to wander  ;; turtle procedure
         if minimum-diff < 30 and encounter-reset-heading >= 30 [
           ifelse other-heading > heading-degrees [
             set heading-degrees heading-degrees - 15
-            set heading-deviation-degrees heading-deviation-degrees - 15
+            set heading-deviation-degrees initial-heading - heading-degrees
             set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ] [
             set heading-degrees heading-degrees + 15
-            set heading-deviation-degrees heading-deviation-degrees + 15
+            set heading-deviation-degrees initial-heading - heading-degrees
             set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ]
           set encounter-reset-heading 0
@@ -351,7 +356,7 @@ to wander  ;; turtle procedure
 
       ifelse found-heading = true and secondary-heading != 0 [
         set course-deviation course-deviation + 1
-        set heading-deviation-degrees heading-deviation-degrees - secondary-heading
+        set heading-deviation-degrees heading-degrees - secondary-heading
         set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
         ifelse course-deviation > max-deviation [
           ifelse  dance-counter < dance-duration [
@@ -635,7 +640,7 @@ NIL
 -360.0
 360.0
 0.0
-10.0
+500.0
 true
 false
 "" ""

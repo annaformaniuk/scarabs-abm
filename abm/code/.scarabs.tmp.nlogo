@@ -11,7 +11,6 @@ globals [
   minimum-dist-from-source
   minimum-last-encounter-time
   dance-duration
-  max-deviation
   initial-dance
   deviation-dance
   free-path-dance
@@ -28,6 +27,8 @@ beetles-own [
   has-ball?
   ball-id
   pronotum-width ; in milimeters
+  spatial-awareness
+  max-deviation
   initial-heading
   heading-degrees
   ball-shaping-counter
@@ -68,7 +69,6 @@ to setup
   set minimum-dist-from-source 90 ; in patches
   set minimum-last-encounter-time 30 ; in ticks
   set dance-duration 20 ; in ticks
-  set max-deviation 20
   set initial-dance 0
   set deviation-dance 0
   set free-path-dance 0
@@ -175,6 +175,7 @@ to create-beetle ; beetle setup
     set starting-tick ticks
     set speeds-list []
     set headings-deviation-list []
+    set max-deviation
   ]
 end
 
@@ -198,7 +199,7 @@ to update-heading-plot
     set-plot-pen-mode 1
     set-plot-y-range 0 500
     set-plot-pen-interval 30
-    set-plot-pen-color
+    set-plot-pen-color who
     histogram headings-deviation-list
   ]
 end

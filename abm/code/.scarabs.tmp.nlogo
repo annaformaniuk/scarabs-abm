@@ -41,6 +41,7 @@ beetles-own [
   average-speed
   speeds-list
   secondary-heading
+  headings-deviation-list
   course-deviation
   heading-deviation-degrees
   starting-tick
@@ -144,12 +145,17 @@ to go  ; forever button
     ]
 
   if count beetles with [nested = false] > 0 [
+
     ask beetles [
     move
   ]
-    show mean [average-speed] of beetles]
+    show mean [average-speed] of beetles
 
+
+
+  ]
   tick
+
 end
 
 to create-beetle ; beetle setup
@@ -168,6 +174,7 @@ to create-beetle ; beetle setup
     set heading-deviation-degrees 0
     set starting-tick ticks
     set speeds-list []
+    set headings-deviation-list []
   ]
 end
 
@@ -177,6 +184,18 @@ to move  ; turtle procedure
     ifelse heading-degrees = 0 [ establish-heading ]
     [ if nested = false [ wander ] ]
   ]
+  ;update-heading-plot
+end
+
+to update-heading-plot
+  set-current-plot-pen (word who)
+  set-plot-pen-mode 1
+  set-plot-y-range 0 10
+  set-plot-pen-interval 30
+  set-plot-pen-color one-of base-colors
+
+
+  histogram headings-deviation-list
 end
 
 
@@ -297,9 +316,11 @@ to wander  ;; turtle procedure
           ifelse other-heading > heading-degrees [
             set heading-degrees heading-degrees - 15
             set heading-deviation-degrees heading-deviation-degrees - 15
+            set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ] [
             set heading-degrees heading-degrees + 15
             set heading-deviation-degrees heading-deviation-degrees + 15
+            set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ]
           set encounter-reset-heading 0
         ]
@@ -331,6 +352,7 @@ to wander  ;; turtle procedure
       ifelse found-heading = true and secondary-heading != 0 [
         set course-deviation course-deviation + 1
         set heading-deviation-degrees heading-deviation-degrees - secondary-heading
+        set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
         ifelse course-deviation > max-deviation [
           ifelse  dance-counter < dance-duration [
             dance
@@ -366,6 +388,7 @@ to wander  ;; turtle procedure
       ; how rough the patch is
       set secondary-heading 0
       set heading-deviation-degrees 0
+      set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
       ifelse course-deviation = 0 [
         push-ball heading-degrees
       ] [
@@ -550,7 +573,7 @@ PLOT
 174
 239
 345
-Speed
+Cumulative average speed
 NIL
 Centimeters per tick
 0.0
@@ -617,7 +640,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 1 -10141563 true "" "set-plot-y-range 0 10\nhistogram [heading-deviation-degrees] of beetles\nset-plot-pen-interval 30"
+"default" 1.0 1 -10141563 true "" ""
 
 MONITOR
 313

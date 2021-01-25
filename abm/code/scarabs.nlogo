@@ -112,7 +112,7 @@ to setup-terrain
     set roughness (round ((pcolor / max-pcolor) * 10)) / 20
     set roughness roughness + random-float 0.1
 
-    set pcolor scale-color brown roughness 1.0 0.0
+    set pcolor scale-color black roughness 1.0 0.0
   ]
 
 
@@ -120,9 +120,9 @@ end
 
 to setup-obstacles
   ; option one
-  rectanglebase 50 60 60 10 black
+  rectanglebase 50 55 55 10 black
   ; option two
-  ask patches with [ pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 90 ]
+  ask patches with [ pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 95 ]
   [ set pcolor black
   set roughness 1.0 ]
 end
@@ -153,8 +153,8 @@ to go  ; forever button
   ]
 
   ; add beetles one at a time if there's 3 or less at the source
-  if (count beetles < beetles-number) and (beetles-at-source <= 3) [
-    if random 50 < 1 [
+  if (count beetles < beetles-number) and (beetles-at-source <= 2) [
+    if random 75 < 1 [
         create-beetle
       ]
     ]
@@ -177,7 +177,7 @@ to create-beetle ; beetle setup
   create-beetles 1 [
     set size 10
     set has-ball? false
-    set color blue
+    set color violet
     set ball-shaping-counter 0
     set dance-counter 0
     set last-encounter 0
@@ -366,15 +366,17 @@ to wander  ;; turtle procedure
     ifelse obstacle? (heading-degrees) [
 
       ifelse dance-counter < dance-duration and current-obstacle-danced = false [
+        show dance-counter
         if dance-counter = 0 [
           set obstacle-dance-total obstacle-dance-total + 1
+          set obstacle-dance-danced obstacle-dance-danced + 1
           set dances-count dances-count + 1
         ]
           dance
         ] [
-          if dance-counter != 0 [
-            set obstacle-dance-danced obstacle-dance-danced + 1
-         ]
+         ; if dance-counter != 0 [
+           ; set obstacle-dance-danced obstacle-dance-danced + 1
+         ;]
         set current-obstacle-danced true
         set dance-counter 0
 
@@ -422,10 +424,10 @@ to wander  ;; turtle procedure
           let walk-duration ticks - starting-tick
           plotxy walk-duration walked-distance
 
-          set color green
+          set color grey
           let beetles-ball ball-id
           ask balls with [ball-who = beetles-ball] [
-            set color green
+            set color grey
           ]
         ]
       ]
@@ -718,9 +720,9 @@ Dancing when course deviates too much %
 MONITOR
 1129
 254
-1341
+1357
 299
-Dancing when the path is free again
+Dancing when the path is free again %
 (free-path-dance-danced / free-path-dance-total) * 100
 17
 1
@@ -729,9 +731,9 @@ Dancing when the path is free again
 MONITOR
 1130
 203
-1339
+1379
 248
-Dancing when encountering an obstacle
+Dancing when encountering an obstacle %
 (obstacle-dance-danced / obstacle-dance-total) * 100
 17
 1

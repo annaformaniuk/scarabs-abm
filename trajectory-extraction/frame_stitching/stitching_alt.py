@@ -58,17 +58,18 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
         p2[i, :] = kp2[matches[i].trainIdx].pt
 
     # Find the homography matrix.
-    homography, mask = cv2.findHomography(p1, p2, cv2.RANSAC)
+
+    homography, _ = cv2.estimateAffinePartial2D(p1,p2)
 
     # Use this matrix to transform the
     # colored image wrt the reference image.
-    transformed_img = cv2.warpPerspective(img1_color,
+    transformed_img = cv2.warpAffine(img1_color,
                                           homography, (width, height))
 
-    transformed_mask = cv2.warpPerspective(foreground_mask,
+    transformed_mask = cv2.warpAffine(foreground_mask,
                                            homography, (width, height))
 
-    transformed_landscape = cv2.warpPerspective(ladscapeFront,
+    transformed_landscape = cv2.warpAffine(ladscapeFront,
                                            homography, (width, height))
 
     gray = cv2.cvtColor(transformed_img, cv2.COLOR_BGR2GRAY)
@@ -110,10 +111,10 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
 
     cv2.imwrite(str(frame_index) + '.jpg', dst)
     cv2.imwrite(str(frame_index) + '_landscape.jpg', landscape_dst)
-    # cv2.imshow('overlay_mask', overlay_mask)
-    # cv2.imshow('dst', dst)
-    # cv2.imshow('landscape_dst', landscape_dst)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    cv2.imshow('overlay_mask', overlay_mask)
+    cv2.imshow('dst', dst)
+    cv2.imshow('landscape_dst', landscape_dst)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     return dst, overlay_mask, landscape_dst

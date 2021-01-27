@@ -36,22 +36,21 @@ beetles-own [
   pronotum-width ; in milimeters
   spatial-awareness
   max-deviation
+  course-deviation
   initial-heading
+  secondary-heading
   heading-degrees
+  headings-deviation-list
+  heading-deviation-degrees
   ball-shaping-counter
   dance-counter
-  course-deviation
-  memory-level
+  ; memory-level
   last-encounter
   encounter-reset-heading
   nested
   walked-distance
   average-speed
   speeds-list
-  secondary-heading
-  headings-deviation-list
-  course-deviation
-  heading-deviation-degrees
   starting-tick
   current-obstacle-danced ; to avoid internal dancing
   dances-count
@@ -162,7 +161,10 @@ to go  ; forever button
   if count beetles with [nested = false] > 0 [
 
     ask beetles [
-    move
+      ifelse not has-ball? [ roll-ball ] [
+        ifelse heading-degrees = 0 [ establish-heading ]
+        [ if nested = false [ wander ] ]
+      ]
   ]
     show mean [average-speed] of beetles
 
@@ -197,14 +199,6 @@ to create-beetle ; beetle setup
   ]
 end
 
-to move  ; turtle procedure
-  ; roll the ball, establish heading and walk unless already nested
-  ifelse not has-ball? [ roll-ball ] [
-    ifelse heading-degrees = 0 [ establish-heading ]
-    [ if nested = false [ wander ] ]
-  ]
-  ;update-heading-plot
-end
 
 to update-heading-plot
   set-current-plot "Heading-deviation"

@@ -40,11 +40,18 @@ def mask_out_objects(frame, objects):
     return masked_objects
 
 
+def get_centroid(bounds):
+    x = (bounds[2] - bounds[0])/2 + bounds[0]
+    y = (bounds[3] - bounds[1])/2 + bounds[1]
+    return (x, y)
+
+
 if (os.path.isfile(args["video_path"])):
     cap = cv2.VideoCapture(args["video_path"])
     yolo = Yolo_detector()
     contours = Contours_detector()
     kernel = np.ones((15, 15), np.uint8)
+    beetle_trajectory = []
 
     while True:
         ret, frame = cap.read()
@@ -76,6 +83,25 @@ if (os.path.isfile(args["video_path"])):
                 landscapeReference = cv2.bitwise_and(
                     landscape, landscape, mask=background_mask_eroded)
 
+                beetle_bounds = next(
+                    (x for x in objects if x["label"] == "Beetle"), None)
+                if(beetle_bounds != None):
+                    beetle_point = get_centroid(beetle_bounds["box"])
+                    beetle_trajectory.append(beetle_point)
+                    beetle_trajectory_array = np.array(
+                        beetle_trajectory, np.int32)
+
+                    beetle_trajectory_array = np.append(
+                        beetle_trajectory_array, [[0, 0]], axis=0)
+                    test = imReference.copy()
+                    beetle_trajectory_array = beetle_trajectory_array.reshape(
+                        (-1, 1, 2))
+                    cv2.polylines(
+                        test, [beetle_trajectory_array], False, (0, 255, 0))
+                    cv2.imshow('test', test)
+                    cv2.waitKey(0)
+                    cv2.destroyAllWindows()
+
             if (i > 1 and i < 6000 and i % 30 == 0):
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
@@ -95,6 +121,7 @@ if (os.path.isfile(args["video_path"])):
                 # finally stitching the images together and replacing variables
                 imReference, background_mask, landscapeReference = stitching_alt.other_stitching(
                     frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, i)
+
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
                 break

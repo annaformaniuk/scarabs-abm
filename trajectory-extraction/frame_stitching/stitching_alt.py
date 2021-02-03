@@ -6,7 +6,7 @@ import imutils
 cv2.ocl.setUseOpenCL(False)
 
 
-def other_stitching(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, frame_index):
+def other_stitching(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, frame_index, new_centroid, old_centroids):
     # img1 align, img2 ref
 
     img2_padded = cv2.copyMakeBorder(
@@ -59,15 +59,15 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
 
     # Find the homography matrix.
 
-    homography, _ = cv2.estimateAffinePartial2D(p1,p2)
+    homography, _ = cv2.estimateAffinePartial2D(p1, p2)
 
     # Use this matrix to transform the
     # colored image wrt the reference image.
     transformed_img = cv2.warpAffine(img1_color,
-                                          homography, (width, height))
+                                     homography, (width, height))
 
     transformed_mask = cv2.warpAffine(foreground_mask,
-                                           homography, (width, height))
+                                      homography, (width, height))
 
     transformed_landscape = cv2.warpAffine(ladscapeFront,
                                            homography, (width, height))
@@ -86,10 +86,14 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
         (overlay_mask * (1 / 255.0))
     dst = np.uint8(cv2.addWeighted(ref_part, 255.0, overlay_part, 255.0, 0.0))
 
-    landscape_part = (landscape_ref_padded * (1 / 255.0)) * (background_mask * (1 / 255.0))
+    dst_orig_shape = dst.shape
+
+    landscape_part = (landscape_ref_padded * (1 / 255.0)) * \
+        (background_mask * (1 / 255.0))
     landscape_overlay_part = (transformed_landscape * (1 / 255.0)) * \
         (overlay_mask * (1 / 255.0))
-    landscape_dst = np.uint8(cv2.addWeighted(landscape_part, 255.0, landscape_overlay_part, 255.0, 0.0))
+    landscape_dst = np.uint8(cv2.addWeighted(
+        landscape_part, 255.0, landscape_overlay_part, 255.0, 0.0))
 
     gray = cv2.cvtColor(dst, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
@@ -109,12 +113,16 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     overlay_mask = cv2.bitwise_and(overlay_mask, transformed_mask)
     landscape_dst = landscape_dst[y:y+h, x:x+w]
 
-    cv2.imwrite(str(frame_index) + '.jpg', dst)
-    cv2.imwrite(str(frame_index) + '_landscape.jpg', landscape_dst)
-    cv2.imshow('overlay_mask', overlay_mask)
-    cv2.imshow('dst', dst)
-    cv2.imshow('landscape_dst', landscape_dst)
+    print(x,y,w,h)
+    print(dst_orig_shape, dst.shape)
+
+    new_centroid_transformed = cv2.transform( np.array([[new_centroid]]),homography)[0]
+    new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(new_centroid_transformed[0][1]))
+    new_centroid_dst = (new_centroid_tuple[0] - x, new_centroid_tuple[1]  - y)
+    test = cv2.circle(dst, new_centroid_dst, radius=3, color=(0, 0, 255), thickness=-1)
+
+    cv2.imshow('test', test)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    return dst, overlay_mask, landscape_dst
+    return dst, overlay_mask, landscape_dst, new_centroid_dst

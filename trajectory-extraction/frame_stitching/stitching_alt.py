@@ -11,7 +11,7 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
 
     img2_padded = cv2.copyMakeBorder(
         img2_color, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-    height, width, depth = img2_color.shape
+    height_orig, width_orig, depth_orig = img2_color.shape
     background_mask_padded = cv2.copyMakeBorder(
         background_mask, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
     landscape_ref_padded = cv2.copyMakeBorder(
@@ -113,16 +113,43 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     overlay_mask = cv2.bitwise_and(overlay_mask, transformed_mask)
     landscape_dst = landscape_dst[y:y+h, x:x+w]
 
-    print(x,y,w,h)
-    print(dst_orig_shape, dst.shape)
+    print("bounding box", x, y, w, h)
+    print("original and new resolutions", dst_orig_shape, dst.shape)
 
-    new_centroid_transformed = cv2.transform( np.array([[new_centroid]]),homography)[0]
-    new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(new_centroid_transformed[0][1]))
-    new_centroid_dst = (new_centroid_tuple[0] - x, new_centroid_tuple[1]  - y)
-    test = cv2.circle(dst, new_centroid_dst, radius=3, color=(0, 0, 255), thickness=-1)
+    new_centroid_transformed = cv2.transform(
+        np.array([[new_centroid]]), homography)[0]
+    new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(
+        new_centroid_transformed[0][1]))
+    new_centroid_dst = (new_centroid_tuple[0] - x, new_centroid_tuple[1] - y)
+    test = dst.copy()
+    test = cv2.circle(test, new_centroid_dst, radius=3,
+                      color=(0, 0, 255), thickness=-1)
 
-    cv2.imshow('test', test)
+    # print("end", old_centroids, new_centroid_dst)
+    new_centroids = []
+    offset_x = 200 - y
+    offset_y = 200 - x
+    print("offsets 1", offset_x, offset_y)
+    # if (offset_x == 0):
+    #     offset_x = -1* (dst.shape[0] - height_orig)
+    # if (offset_y == 0):
+    #     offset_y = -1*(dst.shape[1] - width_orig)
+
+    # print("sizes", dst.shape, height_orig, width_orig)
+
+    print("offsets 2", offset_x, offset_y)
+
+    for centroid in old_centroids:
+        centroid_offset = (centroid[0] + offset_y, centroid[1] + offset_x)
+        print(centroid, centroid_offset)
+        new_centroids.append(centroid_offset)
+        test = cv2.circle(test, centroid_offset, radius=3,
+                          color=(0, 255, 255), thickness=-1)
+
+    cv2.imshow('stitching result', test)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    return dst, overlay_mask, landscape_dst, new_centroid_dst
+    new_centroids.append(new_centroid_dst)
+
+    return dst, overlay_mask, landscape_dst, new_centroids

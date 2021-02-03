@@ -83,26 +83,17 @@ if (os.path.isfile(args["video_path"])):
                 landscapeReference = cv2.bitwise_and(
                     landscape, landscape, mask=background_mask_eroded)
 
-                # beetle_bounds = next(
-                    # (x for x in objects if x["label"] == "Beetle"), None)
-                # if(beetle_bounds != None):
-                    # beetle_point = get_centroid(beetle_bounds["box"])
-                    # beetle_trajectory.append(beetle_point)
-                    # beetle_trajectory_array = np.array(
-                        # beetle_trajectory, np.int32)
-
-                    # beetle_trajectory_array = np.append(
-                    #     beetle_trajectory_array, [[0, 0]], axis=0)
-                    # test = imReference.copy()
-                    # beetle_trajectory_array = beetle_trajectory_array.reshape(
-                        # (-1, 1, 2))
-                    # cv2.polylines(
-                    #     test, [beetle_trajectory_array], False, (0, 255, 0))
-                    # print(beetle_point)
-                    # test = cv2.circle(test, beetle_point, radius=1, color=(0, 0, 255), thickness=-1)
-                    # cv2.imshow('test', test)
-                    # cv2.waitKey(0)
-                    # cv2.destroyAllWindows()
+                beetle_bounds = next(
+                    (x for x in objects if x["label"] == "Beetle"), None)
+                if(beetle_bounds != None):
+                    beetle_point = get_centroid(beetle_bounds["box"])
+                    beetle_trajectory.append(beetle_point)
+                    test = imReference.copy()
+                    test = cv2.circle(test, beetle_point, radius=3, color=(
+                        0, 0, 255), thickness=-1)
+                    cv2.imshow('first frame', test)
+                    cv2.waitKey(0)
+                    cv2.destroyAllWindows()
 
             if (i > 1 and i < 6000 and i % 30 == 0):
                 objects = yolo.detect_objects(frame)
@@ -124,27 +115,10 @@ if (os.path.isfile(args["video_path"])):
                     (x for x in objects if x["label"] == "Beetle"), None)
                 if(beetle_bounds != None):
                     beetle_point = get_centroid(beetle_bounds["box"])
-                    beetle_trajectory.append(beetle_point)
-                    beetle_trajectory_array = np.array(
-                        beetle_trajectory, np.int32)
-
-                    # beetle_trajectory_array = np.append(
-                    #     beetle_trajectory_array, [[0, 0]], axis=0)
-                    test = frame.copy()
-                    # beetle_trajectory_array = beetle_trajectory_array.reshape(
-                        # (-1, 1, 2))
-                    # cv2.polylines(
-                    #     test, [beetle_trajectory_array], False, (0, 255, 0))
-                    print(beetle_point)
-                    test = cv2.circle(test, beetle_point, radius=3, color=(0, 0, 255), thickness=-1)
-                    cv2.imshow('test', test)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
 
                 # finally stitching the images together and replacing variables
-                imReference, background_mask, landscapeReference, new_beetle_point = stitching_alt.other_stitching(
-                    frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, i, beetle_point, [])
-
+                imReference, background_mask, landscapeReference, beetle_trajectory = stitching_alt.other_stitching(
+                    frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, i, beetle_point, beetle_trajectory)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
                 break

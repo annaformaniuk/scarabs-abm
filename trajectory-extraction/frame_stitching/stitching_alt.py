@@ -125,22 +125,13 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     test = cv2.circle(test, new_centroid_dst, radius=3,
                       color=(0, 0, 255), thickness=-1)
 
-    # print("end", old_centroids, new_centroid_dst)
     new_centroids = []
-    offset_x = 200 - y
-    offset_y = 200 - x
-    print("offsets 1", offset_x, offset_y)
-    # if (offset_x == 0):
-    #     offset_x = -1* (dst.shape[0] - height_orig)
-    # if (offset_y == 0):
-    #     offset_y = -1*(dst.shape[1] - width_orig)
-
-    # print("sizes", dst.shape, height_orig, width_orig)
-
-    print("offsets 2", offset_x, offset_y)
+    offset_x = 200 - x
+    offset_y = 200 - y
+    print("offsets", offset_x, offset_y)
 
     for centroid in old_centroids:
-        centroid_offset = (centroid[0] + offset_y, centroid[1] + offset_x)
+        centroid_offset = (centroid[0] + offset_x, centroid[1] + offset_y)
         print(centroid, centroid_offset)
         new_centroids.append(centroid_offset)
         test = cv2.circle(test, centroid_offset, radius=3,

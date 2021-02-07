@@ -191,15 +191,17 @@ def match_pairwise(img1_color, img2_color, foreground_mask, background_mask, lan
 
     # Find the homography matrix.
 
-    homography, _ = cv2.estimateAffinePartial2D(p1, p2)
+    # homography, _ = cv2.estimateAffinePartial2D(p1, p2)
+    (homography, status) = cv2.findHomography(p1, p2, cv2.RANSAC, 4)
 
     # Use this matrix to transform the
     # colored image wrt the reference image.
-    transformed_img = cv2.warpAffine(img1_color,
+    transformed_img = cv2.warpPerspective(img1_color,
                                      homography, (width, height))
 
-    new_centroid_transformed = cv2.transform(
-        np.array([[new_centroid]]), homography)[0]
+    to_transform = np.array([new_centroid], dtype=np.float32)
+    new_centroid_transformed = cv2.perspectiveTransform(
+        to_transform[np.newaxis], homography)[0]
     new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(
         new_centroid_transformed[0][1]))
     test = transformed_img.copy()

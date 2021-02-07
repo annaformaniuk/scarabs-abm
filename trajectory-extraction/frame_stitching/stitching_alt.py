@@ -144,3 +144,73 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     new_centroids.append(new_centroid_dst)
 
     return dst, overlay_mask, landscape_dst, new_centroids
+
+
+def match_pairwise(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, new_centroid):
+        # img1 align, img2 ref
+
+    # Convert to grayscale.
+    img1 = cv2.cvtColor(img1_color, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(img2_color, cv2.COLOR_BGR2GRAY)
+    height, width = img2.shape
+
+    img1 = cv2.fastNlMeansDenoising(img1, 30.0, 7, 21)
+    img2 = cv2.fastNlMeansDenoising(img2, 30.0, 7, 21)
+
+    # Create ORB detector with 5000 features.
+    orb_detector = cv2.ORB_create(5000)
+
+    # Find keypoints and descriptors.
+    # The first arg is the image, second arg is the mask
+    #  (which is not reqiured in this case).
+    kp1, d1 = orb_detector.detectAndCompute(img1, foreground_mask)
+    kp2, d2 = orb_detector.detectAndCompute(img2, background_mask)
+
+    # Match features between the two images.
+    # We create a Brute Force matcher with
+    # Hamming distance as measurement mode.
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+    # Match the two sets of descriptors.
+    matches = matcher.match(d1, d2)
+
+    # Sort matches on the basis of their Hamming distance.
+    matches.sort(key=lambda x: x.distance)
+
+    # Take the top 90 % matches forward.
+    matches = matches[:int(len(matches)*90)]
+    no_of_matches = len(matches)
+
+    # Define empty matrices of shape no_of_matches * 2.
+    p1 = np.zeros((no_of_matches, 2))
+    p2 = np.zeros((no_of_matches, 2))
+
+    for i in range(len(matches)):
+        p1[i, :] = kp1[matches[i].queryIdx].pt
+        p2[i, :] = kp2[matches[i].trainIdx].pt
+
+    # Find the homography matrix.
+
+    homography, _ = cv2.estimateAffinePartial2D(p1, p2)
+
+    # Use this matrix to transform the
+    # colored image wrt the reference image.
+    transformed_img = cv2.warpAffine(img1_color,
+                                     homography, (width, height))
+
+    new_centroid_transformed = cv2.transform(
+        np.array([[new_centroid]]), homography)[0]
+    new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(
+        new_centroid_transformed[0][1]))
+    test = transformed_img.copy()
+    test = cv2.circle(test, new_centroid_tuple, radius=3,
+                      color=(0, 0, 255), thickness=-1)
+
+    cv2.imshow('reference', img2_color)
+    cv2.imshow('matched image', test)
+    cv2.waitKey()
+    cv2.destroyAllWindows
+
+    return transformed_img, new_centroid_tuple
+
+

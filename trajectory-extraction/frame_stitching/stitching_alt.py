@@ -208,10 +208,10 @@ def match_pairwise(img1_color, img2_color, foreground_mask, background_mask, lan
     test = cv2.circle(test, new_centroid_tuple, radius=3,
                       color=(0, 0, 255), thickness=-1)
 
-    cv2.imshow('reference', img2_color)
-    cv2.imshow('matched image', test)
-    cv2.waitKey()
-    cv2.destroyAllWindows
+    # cv2.imshow('reference', img2_color)
+    # cv2.imshow('matched image', test)
+    # cv2.waitKey()
+    # cv2.destroyAllWindows
 
     return transformed_img, new_centroid_tuple
 

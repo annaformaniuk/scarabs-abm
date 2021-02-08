@@ -10,7 +10,7 @@ from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
 from object_detection.shadow_detection import detect_shadow
-
+import matplotlib.pyplot as plt
 # python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
 
 
@@ -45,6 +45,14 @@ def get_centroid(bounds):
     x = int((bounds[2] - bounds[0])/2 + bounds[0])
     y = int((bounds[3] - bounds[1])/2 + bounds[1])
     return (x, y)
+
+
+def get_displacement_vector(first_coords, second_coords):
+    scalar_x = second_coords[0] - first_coords[0]
+    scalar_y = second_coords[1] - first_coords[1]
+    print(first_coords, second_coords)
+    print(scalar_x, scalar_y)
+    return (scalar_x, scalar_y)
 
 
 if (os.path.isfile(args["video_path"])):
@@ -86,15 +94,9 @@ if (os.path.isfile(args["video_path"])):
                     (x for x in objects if x["label"] == "Beetle"), None)
                 if(beetle_bounds != None):
                     first_coords = get_centroid(beetle_bounds["box"])
-      
-                    test = imReference.copy()
-                    test = cv2.circle(test, first_coords, radius=3, color=(
-                        0, 0, 255), thickness=-1)
-                    cv2.imshow('first frame', test)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
 
             if (i > 1 and i < 6000 and i % 30 == 0):
+                height, width, depth = frame.shape
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
                 foreground_mask = mask_out_objects(frame, objects)
@@ -119,7 +121,17 @@ if (os.path.isfile(args["video_path"])):
                 matched_image, matched_coords = stitching_alt.match_pairwise(
                     frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, second_coords)
 
-                # TODO calculate the displacement vector between first_coords and matched_coords
+                # calculate the displacement vector between first_coords and matched_coords
+                displacement_vector = get_displacement_vector(
+                    first_coords, matched_coords)
+                beetle_trajectory.append(displacement_vector)
+
+                # plt.gca().invert_yaxis()
+                # print(first_coords[0], first_coords[1],
+                #            displacement_vector[0], displacement_vector[1])
+                # plt.quiver(first_coords[0], first_coords[1],
+                #            displacement_vector[0], displacement_vector[1], angles='xy')
+                # plt.show()
 
                 # making this frame info to the reference
                 imReference = frame

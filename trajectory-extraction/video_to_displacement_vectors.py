@@ -11,6 +11,7 @@ from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
 from object_detection.shadow_detection import detect_shadow
 import matplotlib.pyplot as plt
+from imutils.video import count_frames
 # python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
 
 
@@ -50,9 +51,45 @@ def get_centroid(bounds):
 def get_displacement_vector(first_coords, second_coords):
     scalar_x = second_coords[0] - first_coords[0]
     scalar_y = second_coords[1] - first_coords[1]
-    print(first_coords, second_coords)
-    print(scalar_x, scalar_y)
+    # print(first_coords, second_coords)
+    # print(scalar_x, scalar_y)
     return (scalar_x, scalar_y)
+
+
+def reproduce_trajectory(displacement_vectors):
+    vectors_array = np.array(displacement_vectors)
+    # print(vectors_array)
+    starting_point = vectors_array.sum(axis=0)
+    starting_point_array = np.array(starting_point)
+    # to start in the middle
+    width = abs(starting_point[0]) + abs(starting_point[0])
+    height = abs(starting_point[1]) + abs(starting_point[1])
+
+    trajectory = starting_point_array + np.cumsum(vectors_array, axis=0)
+    trajectory = np.insert(trajectory, 0, starting_point_array, axis=0)
+    print(trajectory)
+
+    (minimal_x, minimal_y) = trajectory.min(axis=0)
+
+    if(minimal_x < 0):
+        trajectory[:, 0] += abs(minimal_x)
+    if(minimal_y < 0):
+        trajectory[:, 1] += abs(minimal_y)
+    print(trajectory)
+
+    pts = trajectory.reshape((-1, 1, 2))
+    isClosed = False
+    color = (0, 0, 255)
+    thickness = 5
+    black_img = np.zeros((height, width, 3), dtype="uint8")
+
+    black_img = cv2.polylines(black_img, [pts],
+                              isClosed, color, thickness)
+
+    cv2.imshow('black_img', black_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.imwrite('trajectory_reconstruction.png', black_img)
 
 
 if (os.path.isfile(args["video_path"])):
@@ -60,9 +97,11 @@ if (os.path.isfile(args["video_path"])):
     yolo = Yolo_detector()
     contours = Contours_detector()
     kernel = np.ones((15, 15), np.uint8)
-    beetle_trajectory = []
+    displacement_vectors = []
     first_coords = None
     second_coords = None
+    total_frames_count = count_frames(args["video_path"])
+    print('total frames count: ', total_frames_count)
 
     while True:
         ret, frame = cap.read()
@@ -124,7 +163,7 @@ if (os.path.isfile(args["video_path"])):
                 # calculate the displacement vector between first_coords and matched_coords
                 displacement_vector = get_displacement_vector(
                     first_coords, matched_coords)
-                beetle_trajectory.append(displacement_vector)
+                displacement_vectors.append(displacement_vector)
 
                 # plt.gca().invert_yaxis()
                 # print(first_coords[0], first_coords[1],
@@ -139,7 +178,13 @@ if (os.path.isfile(args["video_path"])):
                 background_mask = foreground_mask
                 first_coords = second_coords
 
-            if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
+            # if (i == total_frames_count - 1):
+
+            if (i > 600):
+                reproduce_trajectory(displacement_vectors)
+                break
+
+            if cv2.waitKey(1) & 0xFF == ord('q') or i == total_frames_count:
                 break
         else:
             break

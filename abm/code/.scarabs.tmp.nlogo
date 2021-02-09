@@ -164,7 +164,13 @@ to go  ; forever button
     ask beetles [
       ifelse not has-ball? [ roll-ball ] [
         ifelse heading-degrees = 0 [ establish-heading ]
-        [ if nested = false [ wander ] ]
+        [ if nested = false [
+          ifelse memory-level > memory-level-threshold [
+            establish-heading
+          ] [
+            set memory-level memory-level + 1
+            wander
+        ] ] ]
       ]
   ]
     show mean [average-speed] of beetles
@@ -198,6 +204,8 @@ to create-beetle ; beetle setup
     set current-obstacle-danced false
     set dances-count 0
     set visible-beetles-radius random-in-range 20 50
+    set memory-level-threshold random-in-range 1000 200
+    set memory-level 0
   ]
 end
 
@@ -251,6 +259,7 @@ to establish-heading
       set initial-dance-danced initial-dance-danced + 1
       set dance-counter 0
       set dances-count dances-count + 1
+      set memory-level 0
     ]
     set initial-dance-total initial-dance-total + 1
     let visible-beetles beetles in-radius visible-beetles-radius with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in radius 10 to look at

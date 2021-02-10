@@ -180,7 +180,7 @@ if (os.path.isfile(args["video_path"])):
 
             # if (i == total_frames_count - 1):
 
-            if (i > 600):
+            if (i > total_frames_count - 10):
                 reproduce_trajectory(displacement_vectors)
                 break
 

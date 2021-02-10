@@ -10,6 +10,7 @@ from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
 from object_detection.shadow_detection import detect_shadow
+from imutils.video import count_frames
 # python video_to_trajectory.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
 
 
@@ -45,6 +46,21 @@ def get_centroid(bounds):
     y = int((bounds[3] - bounds[1])/2 + bounds[1])
     return (x, y)
 
+def draw_trajectory(image, trajectory):
+    trajectory_array = np.array(trajectory)
+    pts = trajectory_array.reshape((-1, 1, 2))
+    isClosed = False
+    color = (0, 0, 255)
+    thickness = 5
+
+    traj_img = cv2.polylines(image, [pts],
+                              isClosed, color, thickness)
+
+    # cv2.imshow('traj_img', traj_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    cv2.imwrite('trajectory_reconstruction_stitching.png', traj_img)
+
 
 if (os.path.isfile(args["video_path"])):
     cap = cv2.VideoCapture(args["video_path"])
@@ -52,6 +68,8 @@ if (os.path.isfile(args["video_path"])):
     contours = Contours_detector()
     kernel = np.ones((15, 15), np.uint8)
     beetle_trajectory = []
+    total_frames_count = count_frames(args["video_path"])
+    print('total frames count: ', total_frames_count)
 
     while True:
         ret, frame = cap.read()
@@ -88,12 +106,12 @@ if (os.path.isfile(args["video_path"])):
                 if(beetle_bounds != None):
                     beetle_point = get_centroid(beetle_bounds["box"])
                     beetle_trajectory.append(beetle_point)
-                    test = imReference.copy()
-                    test = cv2.circle(test, beetle_point, radius=3, color=(
-                        0, 0, 255), thickness=-1)
-                    cv2.imshow('first frame', test)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
+                    # test = imReference.copy()
+                    # test = cv2.circle(test, beetle_point, radius=3, color=(
+                    #     0, 0, 255), thickness=-1)
+                    # cv2.imshow('first frame', test)
+                    # cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
 
             if (i > 1 and i < 6000 and i % 30 == 0):
                 objects = yolo.detect_objects(frame)
@@ -119,7 +137,10 @@ if (os.path.isfile(args["video_path"])):
                 # finally stitching the images together and replacing variables
                 imReference, background_mask, landscapeReference, beetle_trajectory = stitching_alt.other_stitching(
                     frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, i, beetle_point, beetle_trajectory)
-
+            
+            if (i > total_frames_count - 10):
+                draw_trajectory(imReference, beetle_trajectory)
+                break
             if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
                 break
         else:

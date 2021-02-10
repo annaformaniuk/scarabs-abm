@@ -5,6 +5,22 @@ import matplotlib.pyplot as plt
 import imutils
 cv2.ocl.setUseOpenCL(False)
 
+def draw_trajectory(image, trajectory, i):
+    copy = image.copy()
+    trajectory_array = np.array(trajectory)
+    pts = trajectory_array.reshape((-1, 1, 2))
+    isClosed = False
+    color = (0, 0, 255)
+    thickness = 5
+
+    traj_img = cv2.polylines(copy, [pts],
+                              isClosed, color, thickness)
+
+    # cv2.imshow('traj_img', traj_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    cv2.imwrite(str(i) + 'trajectory_reconstruction_stitching.png', traj_img)
+
 
 def other_stitching(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, frame_index, new_centroid, old_centroids):
     # img1 align, img2 ref
@@ -38,6 +54,9 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     # We create a Brute Force matcher with
     # Hamming distance as measurement mode.
     matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+    if (d1 is None or d2 is None):
+        return img2_color, background_mask, landscapeReference, old_centroids
 
     # Match the two sets of descriptors.
     matches = matcher.match(d1, d2)
@@ -132,16 +151,18 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
 
     for centroid in old_centroids:
         centroid_offset = (centroid[0] + offset_x, centroid[1] + offset_y)
-        print(centroid, centroid_offset)
+        # print(centroid, centroid_offset)
         new_centroids.append(centroid_offset)
         test = cv2.circle(test, centroid_offset, radius=3,
                           color=(0, 255, 255), thickness=-1)
 
-    cv2.imshow('stitching result', test)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('stitching result', test)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    cv2.imwrite(str(frame_index)+'stitched.png', test)
 
     new_centroids.append(new_centroid_dst)
+    draw_trajectory(dst, new_centroids, frame_index)
 
     return dst, overlay_mask, landscape_dst, new_centroids
 

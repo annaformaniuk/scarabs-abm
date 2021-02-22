@@ -1,16 +1,25 @@
 extensions [
   py
+  array
 ]
 
 globals [
   patch-length
   tick-duration
-  ball-rolling-duration
-  visible-beetles-radius ; will become individual later
+  ; will become individual later
   minimum-dist-from-source
   minimum-last-encounter-time
   dance-duration
-  max-deviation
+  ; is there a less boring way to do this?
+  initial-dance-total
+  initial-dance-danced
+  deviation-dance-total
+  deviation-dance-danced
+  ; deviation-dance-angle TODO
+  free-path-dance-total
+  free-path-dance-danced
+  obstacle-dance-total
+  obstacle-dance-danced
 ]
 
 breed [beetles beetle]
@@ -24,24 +33,34 @@ beetles-own [
   has-ball?
   ball-id
   pronotum-width ; in milimeters
+  spatial-awareness
+  visible-beetles-radius
+  max-deviation
+  course-deviation
   initial-heading
+  secondary-heading
   heading-degrees
+  headings-deviation-list
+  heading-deviation-degrees
   ball-shaping-counter
   dance-counter
-  course-deviation
   memory-level
+  memory-level-threshold
   last-encounter
   encounter-reset-heading
   nested
   walked-distance
-  speed
-  secondary-heading
-  course-deviation
-  heading-deviation-degrees
+  average-speed
+  speeds-list
+  starting-tick
+  current-obstacle-danced ; to avoid internal dancing
+  ball-rolling-duration
+  dances-count
 ]
 
 balls-own [
   ball-who
+  ball-roughness
 ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,19 +75,25 @@ to setup
   reset-ticks
   set patch-length 10 ; one patch equals 10 centimeters maybe
   set tick-duration 1 ; one tick is 1 second maybe
-  set ball-rolling-duration 30 ; in ticks
-  set visible-beetles-radius 10 ; in patches
   set minimum-dist-from-source 90 ; in patches
   set minimum-last-encounter-time 30 ; in ticks
   set dance-duration 20 ; in ticks
-  set max-deviation 20
+  ; ...
+  set initial-dance-total 0
+  set initial-dance-danced 0
+  set deviation-dance-total 0
+  set deviation-dance-danced 0
+  set free-path-dance-total 0
+  set free-path-dance-danced 0
+  set obstacle-dance-total 0
+  set obstacle-dance-danced 0
   ; py:setup py:python
 end
 
 to setup-patches
-  setup-source
   setup-terrain
-  setup-color-patches
+  setup-source
+  ;setup-color-patches
   setup-obstacles
 end
 
@@ -79,21 +104,25 @@ to setup-source
 end
 
 to setup-terrain
-  ask patches with [not source?] [
-    ifelse random 5 = 0 [
-      set roughness random-float 0.5
-    ] [
-      set roughness random-float 0.2
-    ]
+  import-pcolors "blackwhite.png"
+  let max-pcolor 1
+  ask patches with-max [pcolor] [set max-pcolor pcolor]
+
+  ask patches [
+    set roughness (round ((pcolor / max-pcolor) * 10)) / 20
+    set roughness roughness + random-float 0.1
+
+    set pcolor scale-color black roughness 1.0 0.0
   ]
-  diffuse roughness 0.5
+
+
 end
 
 to setup-obstacles
   ; option one
-  rectanglebase 50 60 60 10 black
+  rectanglebase 50 55 55 10 black
   ; option two
-  ask patches with [ pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 90 ]
+  ask patches with [ pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 95 ]
   [ set pcolor black
   set roughness 1.0 ]
 end
@@ -106,11 +135,11 @@ to rectanglebase [x y w l c]
   set roughness 1.0]
 end
 
-to setup-color-patches
-  ask patches with [not source?] [
-    set pcolor scale-color brown roughness 1.0 0.0
-  ]
-end
+;to setup-color-patches
+  ;ask patches with [not source?] [
+  ;  set pcolor scale-color brown roughness 1.0 0.0
+  ;]
+;end
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;;; Go procedures ;;;
@@ -124,26 +153,48 @@ to go  ; forever button
   ]
 
   ; add beetles one at a time if there's 3 or less at the source
-  if (count beetles < beetles-number) and (beetles-at-source <= 3) [
-    if random 50 < 1 [
+  if (count beetles < beetles-number) and (beetles-at-source <= 2) [
+    if random 75 < 1 [
         create-beetle
       ]
     ]
 
   if count beetles with [nested = false] > 0 [
-    ask beetles [
-    move
-  ]
-    show mean [speed] of beetles]
 
+    ask beetles [
+      ifelse not has-ball? [
+        ifelse ball-rolling-duration = 0 [
+          let visible-beetles beetles in-radius visible-beetles-radius with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
+          set ball-rolling-duration 60 - ((count visible-beetles) * 3)
+          if ball-rolling-duration < 30 [
+          set ball-rolling-duration 30]
+      ] [
+          roll-ball
+      ] ] [
+        ifelse heading-degrees = 0 [ establish-heading ]
+        [ if nested = false [
+          ifelse memory-level > memory-level-threshold [
+            establish-heading
+          ] [
+            set memory-level memory-level + 1
+            wander
+        ] ] ]
+      ]
+  ]
+    show mean [average-speed] of beetles
+
+    update-heading-plot
+
+  ]
   tick
+
 end
 
 to create-beetle ; beetle setup
   create-beetles 1 [
     set size 10
     set has-ball? false
-    set color blue
+    set color violet
     set ball-shaping-counter 0
     set dance-counter 0
     set last-encounter 0
@@ -153,14 +204,34 @@ to create-beetle ; beetle setup
     set course-deviation 0
     set pronotum-width random-in-range 14 21
     set heading-deviation-degrees 0
+    set starting-tick ticks
+    set speeds-list []
+    set headings-deviation-list []
+    set max-deviation random-in-range 20 40
+    set spatial-awareness random-in-range 1 10
+    set current-obstacle-danced false
+    set dances-count 0
+    set visible-beetles-radius random-in-range 20 50
+    set memory-level-threshold random-in-range 1000 2000
+    set memory-level 0
+    set ball-rolling-duration 0
   ]
 end
 
-to move  ; turtle procedure
-  ; roll the ball, establish heading and walk unless already nested
-  ifelse not has-ball? [ roll-ball ] [
-    ifelse heading-degrees = 0 [ establish-heading ]
-    [ if nested = false [ wander ] ]
+
+to update-heading-plot
+  set-current-plot "Heading-deviation"
+  clear-plot
+  ask beetles
+  [
+    let temp_string (word who)
+    create-temporary-plot-pen temp_string
+    set-current-plot-pen temp_string
+    set-plot-pen-mode 1
+    set-plot-y-range 0 500
+    set-plot-pen-interval 30
+    set-plot-pen-color who
+    histogram headings-deviation-list
   ]
 end
 
@@ -175,11 +246,13 @@ to roll-ball
   ] [
     if random 10 < 2 [
       let temp -1
+      let rolling-temp ball-rolling-duration
       hatch-balls 1 [
         set color magenta
         set size 5
         set ball-who who
         set temp who
+        set ball-roughness (1 - (rolling-temp / 60))
       ]
       set has-ball? true
       set ball-id temp
@@ -189,11 +262,18 @@ to roll-ball
 end
 
 to establish-heading
-  ifelse dance-counter < dance-duration [
+  ifelse dance-counter < dance-duration and spatial-awareness < 7 [
     dance
+
   ] [
-    set dance-counter 0
-    let visible-beetles beetles in-radius 50 with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in radius 10 to look at
+    if dance-counter != 0 [
+      set initial-dance-danced initial-dance-danced + 1
+      set dance-counter 0
+      set dances-count dances-count + 1
+      set memory-level 0
+    ]
+    set initial-dance-total initial-dance-total + 1
+    let visible-beetles beetles in-radius visible-beetles-radius with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
 
     ifelse count visible-beetles >= 1 [
       ifelse count visible-beetles = 1 [
@@ -254,7 +334,7 @@ to establish-heading
 end
 
 to wander  ;; turtle procedure
-  let visible-beetles other beetles in-radius 30
+  let visible-beetles other beetles in-radius visible-beetles-radius
   ifelse count visible-beetles > 0
   [
     ; at first checking for beetles in vicinity to adapt to
@@ -280,10 +360,12 @@ to wander  ;; turtle procedure
         if minimum-diff < 30 and encounter-reset-heading >= 30 [
           ifelse other-heading > heading-degrees [
             set heading-degrees heading-degrees - 15
-            set heading-deviation-degrees heading-deviation-degrees - 15
+            set heading-deviation-degrees initial-heading - heading-degrees
+            set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ] [
             set heading-degrees heading-degrees + 15
-            set heading-deviation-degrees heading-deviation-degrees + 15
+            set heading-deviation-degrees initial-heading - heading-degrees
+            set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ]
           set encounter-reset-heading 0
         ]
@@ -298,63 +380,92 @@ to wander  ;; turtle procedure
 
     ; at first we need to check if there's an obstacle ahead of original heading
     ifelse obstacle? (heading-degrees) [
-      let found-heading false
-      ifelse secondary-heading = 0 [
-        set secondary-heading find-secondary-heading heading-degrees
-        set found-heading true
-      ] [
-        ; if that path is still not free - check if the secondary heading is ok
-        ifelse obstacle? (secondary-heading) [
+
+      ifelse dance-counter < dance-duration and current-obstacle-danced = false [
+        show dance-counter
+        if dance-counter = 0 [
+          set obstacle-dance-total obstacle-dance-total + 1
+          set obstacle-dance-danced obstacle-dance-danced + 1
+          set dances-count dances-count + 1
+        ]
+          dance
+        ] [
+         ; if dance-counter != 0 [
+           ; set obstacle-dance-danced obstacle-dance-danced + 1
+         ;]
+        set current-obstacle-danced true
+        set dance-counter 0
+
+        let found-heading false
+        ifelse secondary-heading = 0 [
           set secondary-heading find-secondary-heading heading-degrees
           set found-heading true
         ] [
-          set found-heading true
-        ]
-      ]
-
-      ifelse found-heading = true and secondary-heading != 0 [
-        set course-deviation course-deviation + 1
-        set heading-deviation-degrees heading-deviation-degrees - secondary-heading
-        ifelse course-deviation > max-deviation [
-          ifelse  dance-counter < dance-duration [
-            dance
+          ; if that path is still not free - check if the secondary heading is ok
+          ifelse obstacle? (secondary-heading) [
+            set secondary-heading find-secondary-heading heading-degrees
+            set found-heading true
           ] [
-            set dance-counter 0
-            set course-deviation 0
+            set found-heading true
+          ]
+        ]
+
+        ifelse found-heading = true and secondary-heading != 0 [
+          set course-deviation course-deviation + 1
+          set heading-deviation-degrees heading-degrees - secondary-heading
+          set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
+          ifelse course-deviation > max-deviation [
+            ;ifelse dance-counter < dance-duration [
+              ;dance
+            ;] [
+              set dance-counter 0
+            ;set dances-count dances-count + 1
+              set deviation-dance-total deviation-dance-total + 1
+              set deviation-dance-danced deviation-dance-danced + 1
+              set course-deviation 0
+              push-ball secondary-heading
+            ;]
+          ] [
+            ; move in the secondary direction
             push-ball secondary-heading
           ]
+
         ] [
-          ; move in the secondary direction
-          push-ball secondary-heading
-        ]
+          ; got stuck somewhere somehow
+          set nested true
+          set-current-plot "Walked distance vs stopping time"
+          set-current-plot-pen "pen-0"
+          set-plot-pen-mode 2
+          set-plot-pen-color one-of base-colors
+          let walk-duration ticks - starting-tick
+          plotxy walk-duration walked-distance
 
-      ] [
-        ; got stuck somewhere somehow
-        set nested true
-        set-current-plot "Walked distance vs stopping time"
-        set-current-plot-pen "pen-0"
-        set-plot-pen-mode 2
-        set-plot-pen-color one-of base-colors
-        plotxy ticks walked-distance
-
-        set color green
-        let beetles-ball ball-id
-        ask balls with [ball-who = beetles-ball] [
-          set color green
+          set color grey
+          let beetles-ball ball-id
+          ask balls with [ball-who = beetles-ball] [
+            set color grey
+          ]
         ]
       ]
     ] [
       ; if there is no obstacle in front, just walk depending on
       ; how rough the patch is
+      set current-obstacle-danced false
       set secondary-heading 0
       set heading-deviation-degrees 0
+      set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
       ifelse course-deviation = 0 [
         push-ball heading-degrees
       ] [
-        ifelse  dance-counter < dance-duration [
+        ifelse  dance-counter < dance-duration and spatial-awareness < 8 [
           dance
         ] [
-          set dance-counter 0
+          if dance-counter != 0 [
+            set dance-counter 0
+            set dances-count dances-count + 1
+            set free-path-dance-danced free-path-dance-danced + 1
+          ]
+          set free-path-dance-total free-path-dance-total + 1
           set course-deviation 0
           push-ball heading-degrees
         ]
@@ -367,7 +478,8 @@ to wander  ;; turtle procedure
     set-current-plot-pen "pen-0"
     set-plot-pen-mode 2
     set-plot-pen-color one-of base-colors
-    plotxy ticks walked-distance
+    let walk-duration ticks - starting-tick
+    plotxy walk-duration walked-distance
     set color grey
     let beetles-ball ball-id
     ask balls with [ball-who = beetles-ball] [
@@ -380,26 +492,38 @@ end
 to dance
   set heading heading + 20
   set dance-counter dance-counter + 1
-  set speed 0
+  set average-speed 0
 end
 
 to push-ball [#some-heading] ; beetle and ball actually moving
   set heading #some-heading
   let randomness (random-in-range 95 105) / 100
+  let this-ball-roughness 0
+  let beetles-ball ball-id
+  ask balls with [ball-who = beetles-ball] [
+    set this-ball-roughness ball-roughness
+  ]
   let step-length pronotum-width * 0.035
   ask patch-ahead 1 [
-    set step-length step-length - roughness
+    show step-length
+    set step-length step-length - roughness - this-ball-roughness
+    show step-length
+    show "that's it"
+    if step-length < 0.1 [
+    set step-length 0.1]
     ;set step-length round (step-length * 10)
   ]
   ; show step-length
   ;if random 10 < step-length [
   fd step-length
   set walked-distance walked-distance + (step-length * patch-length)
-  set speed (step-length / tick-duration) * 10
+  let speed (step-length / tick-duration) * 10
+  set speeds-list lput speed speeds-list
+  set average-speed mean speeds-list
   ; plotting
   ;let random-color one-of base-colors
   ;set-plot-pen-color random-color plotxy who walked-distance
-  let beetles-ball ball-id
+  ;let beetles-ball ball-id
   let beetles-heading #some-heading
   ask balls with [ball-who = beetles-ball] [
     set heading beetles-heading
@@ -442,14 +566,14 @@ to-report source? ; patch reporter
 end
 
 to-report obstacle? [angle]  ; turtle procedure to see if patch ahead at some angle is an obstacle
-  report black = [pcolor] of patch-at-heading-and-distance angle 1
+  report ((black = [pcolor] of patch-at-heading-and-distance angle 3) or (black = [pcolor] of patch-at-heading-and-distance angle 2) or (black = [pcolor] of patch-at-heading-and-distance angle 1))
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 587
 30
-996
-440
+1096
+540
 -1
 -1
 1.0
@@ -462,10 +586,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--200
-200
--200
-200
+-250
+250
+-250
+250
 1
 1
 1
@@ -473,25 +597,25 @@ ticks
 1.0
 
 SLIDER
-20
-26
-192
-59
+50
+17
+222
+50
 beetles-number
 beetles-number
 1
 100
-17.0
+82.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-25
-77
-88
-110
+52
+65
+127
+98
 NIL
 setup
 NIL
@@ -505,10 +629,10 @@ NIL
 1
 
 BUTTON
-119
-77
-182
-110
+149
+65
+218
+98
 NIL
 go
 T
@@ -523,12 +647,12 @@ NIL
 
 PLOT
 27
-189
+174
 239
-345
-Speed
+366
+Cumulative average speed
 NIL
-Centimeters per tick
+Centimeters per second
 0.0
 15.0
 0.0
@@ -537,9 +661,9 @@ true
 false
 "" ""
 PENS
-"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot mean [speed] of beetles with [speed > 0]]"
-"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot min [speed] of beetles with [speed > 0]]"
-"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and speed > 0 ] > 0 [plot max [speed] of beetles with [speed > 0]]"
+"Mean" 1.0 0 -16710653 true "" "if count beetles with [ nested = false and average-speed > 0 ] > 0 [plot mean [average-speed] of beetles with [average-speed > 0]]"
+"Min" 1.0 0 -8275240 true "" "if count beetles with [ nested = false and average-speed > 0 ] > 0 [plot min [average-speed] of beetles with [average-speed > 0]]"
+"Max" 1.0 0 -6917194 true "" "if count beetles with [ nested = false and average-speed > 0 ] > 0 [plot max [average-speed] of beetles with [average-speed > 0]]"
 
 PLOT
 26
@@ -547,8 +671,8 @@ PLOT
 241
 547
 Heading-degrees
-NIL
-NIL
+Angle
+Frequency
 0.0
 360.0
 0.0
@@ -560,13 +684,13 @@ PENS
 "default" 5.0 1 -14439633 true "" "set-plot-y-range 0 10\nhistogram [initial-heading] of beetles\nset-plot-pen-interval 30"
 
 PLOT
-298
-189
-504
-345
+289
+174
+516
+366
 Walked distance vs stopping time
-NIL
-NIL
+Seconds
+Centimeters
 0.0
 10.0
 0.0
@@ -575,7 +699,7 @@ true
 false
 "" ""
 PENS
-"pen-0" 1.0 0 -7500403 true "" ""
+"pen-0" 1.0 2 -7500403 true "" ""
 
 PLOT
 287
@@ -583,17 +707,81 @@ PLOT
 517
 545
 Heading-deviation
-NIL
-NIL
+Deviation angle
+Frequency
 -360.0
 360.0
+0.0
+500.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -10141563 true "" ""
+
+MONITOR
+1129
+76
+1350
+121
+Dancing when establishing heading %
+(initial-dance-danced / initial-dance-total) * 100
+17
+1
+11
+
+MONITOR
+1129
+128
+1380
+173
+Dancing when course deviates too much %
+(deviation-dance-danced / deviation-dance-total) * 100
+17
+1
+11
+
+MONITOR
+1129
+254
+1357
+299
+Dancing when the path is free again %
+(free-path-dance-danced / free-path-dance-total) * 100
+17
+1
+11
+
+MONITOR
+1130
+203
+1379
+248
+Dancing when encountering an obstacle %
+(obstacle-dance-danced / obstacle-dance-total) * 100
+17
+1
+11
+
+PLOT
+1128
+352
+1367
+538
+Cumulative dances count
+Seconds
+Count
+0.0
+10.0
 0.0
 10.0
 true
 false
 "" ""
 PENS
-"default" 1.0 1 -10141563 true "" "set-plot-y-range 0 10\nhistogram [heading-deviation-degrees] of beetles\nset-plot-pen-interval 30"
+"default" 1.0 0 -8630108 true "" "if count beetles > 0 [plot max [dances-count] of beetles]"
+"pen-1" 1.0 0 -16777216 true "" "if count beetles > 0 [plot mean [dances-count] of beetles]"
+"pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
 
 @#$#@#$#@
 ## WHAT IS IT?

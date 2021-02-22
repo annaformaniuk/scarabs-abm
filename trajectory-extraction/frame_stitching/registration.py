@@ -110,8 +110,8 @@ if __name__ == '__main__':
         # Storing registered image
         imReg = alignImages(imTarget, imReference, orb=False)
         # Write aligned image to disk.
-        outFilename = outputFolder + "/" + str(jpgs[i]) + "_" + str(jpgs[i+1])
-        # print("Saving aligned image : ", outFilename)
-        cv2.imwrite(outFilename, imReg)
+        cv2.imshow('imReg', imReg)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         i += 1

@@ -58,5 +58,4 @@ class Contours_detector():
         out = 255 * out
         out = out.astype(np.uint8)
         out = cv.cvtColor(out, cv.COLOR_GRAY2BGR)
-        cv.imshow('landscape contours', out)
-        cv.waitKey(0)
+        return out

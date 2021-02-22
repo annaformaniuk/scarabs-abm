@@ -10,8 +10,9 @@ from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
 from object_detection.shadow_detection import detect_shadow
+import matplotlib.pyplot as plt
 from imutils.video import count_frames
-# python video_to_trajectory.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
+# python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
 
 
 # construct the argument parser and parse the arguments
@@ -46,20 +47,49 @@ def get_centroid(bounds):
     y = int((bounds[3] - bounds[1])/2 + bounds[1])
     return (x, y)
 
-def draw_trajectory(image, trajectory):
-    trajectory_array = np.array(trajectory)
-    pts = trajectory_array.reshape((-1, 1, 2))
+
+def get_displacement_vector(first_coords, second_coords):
+    scalar_x = second_coords[0] - first_coords[0]
+    scalar_y = second_coords[1] - first_coords[1]
+    # print(first_coords, second_coords)
+    # print(scalar_x, scalar_y)
+    return (scalar_x, scalar_y)
+
+
+def reproduce_trajectory(displacement_vectors):
+    vectors_array = np.array(displacement_vectors)
+    # print(vectors_array)
+    starting_point = vectors_array.sum(axis=0)
+    starting_point_array = np.array(starting_point)
+    # to start in the middle
+    width = abs(starting_point[0]) + abs(starting_point[0])
+    height = abs(starting_point[1]) + abs(starting_point[1])
+
+    trajectory = starting_point_array + np.cumsum(vectors_array, axis=0)
+    trajectory = np.insert(trajectory, 0, starting_point_array, axis=0)
+    print(trajectory)
+
+    (minimal_x, minimal_y) = trajectory.min(axis=0)
+
+    if(minimal_x < 0):
+        trajectory[:, 0] += abs(minimal_x)
+    if(minimal_y < 0):
+        trajectory[:, 1] += abs(minimal_y)
+    print(trajectory)
+
+    pts = trajectory.reshape((-1, 1, 2))
     isClosed = False
     color = (0, 0, 255)
     thickness = 5
+    black_img = np.zeros((height, width, 3), dtype="uint8")
 
-    traj_img = cv2.polylines(image, [pts],
+    black_img = cv2.polylines(black_img, [pts],
                               isClosed, color, thickness)
 
-    # cv2.imshow('traj_img', traj_img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    cv2.imwrite('trajectory_reconstruction_stitching.png', traj_img)
+    cv2.imshow('black_img', black_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.imwrite('trajectory_reconstruction.png', black_img)
 
 
 if (os.path.isfile(args["video_path"])):
@@ -67,7 +97,9 @@ if (os.path.isfile(args["video_path"])):
     yolo = Yolo_detector()
     contours = Contours_detector()
     kernel = np.ones((15, 15), np.uint8)
-    beetle_trajectory = []
+    displacement_vectors = []
+    first_coords = None
+    second_coords = None
     total_frames_count = count_frames(args["video_path"])
     print('total frames count: ', total_frames_count)
 
@@ -81,10 +113,6 @@ if (os.path.isfile(args["video_path"])):
                 # that's what the previously matched frames will become, so that they are not used as reference
                 height, width, depth = frame.shape
                 background_mask = 255 * np.ones((height, width, 1), np.uint8)
-                # connected_homography = [] # alternative stitching with matrix multiplication
-                # https://web.archive.org/web/20140115053733/http://cs.bath.ac.uk:80/brown/papers/ijcv2007.pdf
-                # H_03 = H_01 * H_12 * H_23.
-                # connected_homography = np.matmul(connected_homography, homography)
 
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
@@ -104,16 +132,10 @@ if (os.path.isfile(args["video_path"])):
                 beetle_bounds = next(
                     (x for x in objects if x["label"] == "Beetle"), None)
                 if(beetle_bounds != None):
-                    beetle_point = get_centroid(beetle_bounds["box"])
-                    beetle_trajectory.append(beetle_point)
-                    # test = imReference.copy()
-                    # test = cv2.circle(test, beetle_point, radius=3, color=(
-                    #     0, 0, 255), thickness=-1)
-                    # cv2.imshow('first frame', test)
-                    # cv2.waitKey(0)
-                    # cv2.destroyAllWindows()
+                    first_coords = get_centroid(beetle_bounds["box"])
 
             if (i > 1 and i < 6000 and i % 30 == 0):
+                height, width, depth = frame.shape
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
                 foreground_mask = mask_out_objects(frame, objects)
@@ -132,16 +154,37 @@ if (os.path.isfile(args["video_path"])):
                 beetle_bounds = next(
                     (x for x in objects if x["label"] == "Beetle"), None)
                 if(beetle_bounds != None):
-                    beetle_point = get_centroid(beetle_bounds["box"])
+                    second_coords = get_centroid(beetle_bounds["box"])
 
                 # finally stitching the images together and replacing variables
-                imReference, background_mask, landscapeReference, beetle_trajectory = stitching_alt.other_stitching(
-                    frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, i, beetle_point, beetle_trajectory)
-            
+                matched_image, matched_coords = stitching_alt.match_pairwise(
+                    frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, second_coords)
+
+                # calculate the displacement vector between first_coords and matched_coords
+                displacement_vector = get_displacement_vector(
+                    first_coords, matched_coords)
+                displacement_vectors.append(displacement_vector)
+
+                # plt.gca().invert_yaxis()
+                # print(first_coords[0], first_coords[1],
+                #            displacement_vector[0], displacement_vector[1])
+                # plt.quiver(first_coords[0], first_coords[1],
+                #            displacement_vector[0], displacement_vector[1], angles='xy')
+                # plt.show()
+
+                # making this frame info to the reference
+                imReference = frame
+                landscapeReference = landscapeFront
+                background_mask = foreground_mask
+                first_coords = second_coords
+
+            # if (i == total_frames_count - 1):
+
             if (i > total_frames_count - 10):
-                draw_trajectory(imReference, beetle_trajectory)
+                reproduce_trajectory(displacement_vectors)
                 break
-            if cv2.waitKey(1) & 0xFF == ord('q') or i > 6000:
+
+            if cv2.waitKey(1) & 0xFF == ord('q') or i == total_frames_count:
                 break
         else:
             break

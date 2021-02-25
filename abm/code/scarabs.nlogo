@@ -5,6 +5,7 @@ extensions [
 
 globals [
   patch-length
+  patch-roughness-impact
   tick-duration
   ; will become individual later
   minimum-dist-from-source
@@ -20,6 +21,7 @@ globals [
   free-path-dance-danced
   obstacle-dance-total
   obstacle-dance-danced
+  total-mean-speed
 ]
 
 breed [beetles beetle]
@@ -87,6 +89,8 @@ to setup
   set free-path-dance-danced 0
   set obstacle-dance-total 0
   set obstacle-dance-danced 0
+  ;set patch-roughness-impact 1
+  set total-mean-speed 0
   ; py:setup py:python
 end
 
@@ -94,7 +98,7 @@ to setup-patches
   setup-terrain
   setup-source
   ;setup-color-patches
-  setup-obstacles
+  ;setup-obstacles
 end
 
 to setup-source
@@ -181,7 +185,8 @@ to go  ; forever button
         ] ] ]
       ]
   ]
-    show mean [average-speed] of beetles
+    ;show mean [average-speed] of beetles
+    set total-mean-speed max [average-speed] of beetles
 
     update-heading-plot
 
@@ -288,14 +293,14 @@ to establish-heading
 
         set heading-degrees new-heading + noise ; setting new heading opposite to the existing one
         set initial-heading heading-degrees
-        show heading-degrees
+        ;show heading-degrees
       ]
       [
         ; if there is more than one beetle, pick the one that's heading in the closest direction and adapt
         let headings-list []  ; initialize empty list of headings in the range
         ask visible-beetles [
           set headings-list lput heading-degrees headings-list  ; append headings
-          show heading-degrees
+          ;show heading-degrees
         ]
         let sorted-list sort headings-list  ; sort them for calculations
 
@@ -321,7 +326,7 @@ to establish-heading
 
         set heading-degrees int ((((item 1 chosen-headings + item 0 chosen-headings) / 2) + noise) mod 360)
         set initial-heading heading-degrees
-        show heading-degrees
+        ;show heading-degrees
       ]
     ]
 
@@ -398,7 +403,7 @@ to wander  ;; turtle procedure
     ifelse obstacle? (heading-degrees) [
 
       ifelse dance-counter < dance-duration and current-obstacle-danced = false [
-        show dance-counter
+        ;show dance-counter
         if dance-counter = 0 [
           set obstacle-dance-total obstacle-dance-total + 1
           set obstacle-dance-danced obstacle-dance-danced + 1
@@ -502,6 +507,7 @@ to wander  ;; turtle procedure
      set color grey
       ]
   ]
+  ]
 end
 
 ; the turning around on the ball to look at the sky and get orientation
@@ -521,10 +527,10 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   ]
   let step-length pronotum-width * 0.035
   ask patch-ahead 1 [
-    show step-length
-    set step-length step-length - roughness - this-ball-roughness
-    show step-length
-    show "that's it"
+    ;show step-length
+    set step-length step-length - (patch-roughness-impact * roughness) - this-ball-roughness
+    ;show step-length
+    ;show "that's it"
     if step-length < 0.1 [
     set step-length 0.1]
     ;set step-length round (step-length * 10)

@@ -334,6 +334,22 @@ to establish-heading
 end
 
 to wander  ;; turtle procedure
+  ifelse xcor = max-pxcor or xcor = min-pxcor [
+    ; nest if end of the world
+    ; TODO reuse code
+    set nested true
+    set-current-plot "Walked distance vs stopping time"
+    set-current-plot-pen "pen-0"
+    set-plot-pen-mode 2
+    set-plot-pen-color one-of base-colors
+    let walk-duration ticks - starting-tick
+    plotxy walk-duration walked-distance
+    set color grey
+    let beetles-ball ball-id
+    ask balls with [ball-who = beetles-ball] [
+     set color grey
+      ]
+  ] [
   let visible-beetles other beetles in-radius visible-beetles-radius
   ifelse count visible-beetles > 0
   [

@@ -6,6 +6,8 @@ extensions [
 globals [
   patch-length
   ;patch-roughness-impact
+  ;protonum-width-impact
+  ;ball-roughness-impact
   tick-duration
   ; will become individual later
   minimum-dist-from-source
@@ -93,6 +95,7 @@ to setup
   ;set patch-roughness-impact 1
   set total-mean-speed 0
   ; py:setup py:python
+
 end
 
 to setup-patches
@@ -208,7 +211,7 @@ to create-beetle ; beetle setup
     set encounter-reset-heading 30
     set walked-distance 0
     set course-deviation 0
-    set pronotum-width random-in-range 14 21
+    set pronotum-width ((random-in-range 10 21) / 10) ; to cm
     set heading-deviation-degrees 0
     set starting-tick ticks
     set speeds-list []
@@ -526,14 +529,14 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   ask balls with [ball-who = beetles-ball] [
     set this-ball-roughness ball-roughness
   ]
-  let step-length pronotum-width * 0.035
+  let step-length pronotum-width * protonum-width-impact
   ask patch-ahead 1 [
     ;show patch-roughness-impact
-    set step-length step-length - (patch-roughness-impact * roughness) - this-ball-roughness
+    set step-length step-length - (patch-roughness-impact * roughness) - (this-ball-roughness * ball-roughness-impact)
     ;show step-length
     ;show "that's it"
-    if step-length < 0.1 [
-    set step-length 0.1]
+    if step-length < 0.01 [
+    set step-length 0.01]
     ;set step-length round (step-length * 10)
   ]
   ; show step-length
@@ -607,8 +610,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
+1
+1
 1
 -250
 250
@@ -621,10 +624,10 @@ ticks
 1.0
 
 SLIDER
-50
-17
-222
-50
+9
+10
+181
+43
 beetles-number
 beetles-number
 1
@@ -636,10 +639,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-52
-65
-127
-98
+11
+53
+86
+86
 NIL
 setup
 NIL
@@ -653,10 +656,10 @@ NIL
 1
 
 BUTTON
-149
-65
-218
-98
+110
+53
+179
+86
 NIL
 go
 T
@@ -808,12 +811,42 @@ PENS
 "pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
 
 SLIDER
-279
-22
-463
-55
+201
+10
+293
+43
 patch-roughness-impact
 patch-roughness-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+297
+10
+389
+43
+protonum-width-impact
+protonum-width-impact
+0
+10
+0.35
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+393
+10
+485
+43
+ball-roughness-impact
+ball-roughness-impact
 0
 10
 1.0

@@ -52,6 +52,7 @@ beetles-own [
   encounter-reset-heading
   nested
   walked-distance
+  current-speed
   average-speed
   speeds-list
   starting-tick
@@ -89,7 +90,7 @@ to setup
   set free-path-dance-danced 0
   set obstacle-dance-total 0
   set obstacle-dance-danced 0
-  ;set patch-roughness-impact 1
+  set patch-roughness-impact 1
   set total-mean-speed 0
   ; py:setup py:python
 end
@@ -186,7 +187,7 @@ to go  ; forever button
       ]
   ]
     ;show mean [average-speed] of beetles
-    set total-mean-speed max [average-speed] of beetles
+    set total-mean-speed mean [current-speed] of beetles
 
     update-heading-plot
 
@@ -527,7 +528,7 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   ]
   let step-length pronotum-width * 0.035
   ask patch-ahead 1 [
-    ;show step-length
+    ;show patch-roughness-impact
     set step-length step-length - (patch-roughness-impact * roughness) - this-ball-roughness
     ;show step-length
     ;show "that's it"
@@ -539,8 +540,9 @@ to push-ball [#some-heading] ; beetle and ball actually moving
   ;if random 10 < step-length [
   fd step-length
   set walked-distance walked-distance + (step-length * patch-length)
-  let speed (step-length / tick-duration) * 10
-  set speeds-list lput speed speeds-list
+  set current-speed (step-length / tick-duration) * 10
+  ;show current-speed
+  set speeds-list lput current-speed speeds-list
   set average-speed mean speeds-list
   ; plotting
   ;let random-color one-of base-colors

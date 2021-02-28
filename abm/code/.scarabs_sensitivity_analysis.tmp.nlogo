@@ -8,10 +8,12 @@ globals [
   ;patch-roughness-impact
   ;protonum-width-impact
   ;ball-roughness-impact
+  ;distance-threshold-impact
+  ;last-seen-threshold-impact
+  ;seen-radius-impact
+  ;heading-memory-impact
+  ;spatial-awareness-impact
   tick-duration
-  ; will become individual later
-  minimum-dist-from-source
-  minimum-last-encounter-time
   dance-duration
   ; is there a less boring way to do this?
   initial-dance-total
@@ -24,6 +26,8 @@ globals [
   obstacle-dance-total
   obstacle-dance-danced
   total-mean-speed
+  total-distances-walked
+  total-durations-walked
 ]
 
 breed [beetles beetle]
@@ -61,6 +65,8 @@ beetles-own [
   current-obstacle-danced ; to avoid internal dancing
   ball-rolling-duration
   dances-count
+  minimum-dist-from-source
+  minimum-last-encounter-time
 ]
 
 balls-own [
@@ -80,8 +86,6 @@ to setup
   reset-ticks
   set patch-length 10 ; one patch equals 10 centimeters maybe
   set tick-duration 1 ; one tick is 1 second maybe
-  set minimum-dist-from-source 90 ; in patches
-  set minimum-last-encounter-time 30 ; in ticks
   set dance-duration 20 ; in ticks
   ; ...
   set initial-dance-total 0
@@ -95,6 +99,8 @@ to setup
   ;set patch-roughness-impact 1
   set total-mean-speed 0
   ; py:setup py:python
+  set total-distances-walked []
+  set total-durations-walked []
 
 end
 
@@ -102,7 +108,7 @@ to setup-patches
   setup-terrain
   setup-source
   ;setup-color-patches
-  ;setup-obstacles
+  setup-obstacles
 end
 
 to setup-source
@@ -172,7 +178,7 @@ to go  ; forever button
     ask beetles [
       ifelse not has-ball? [
         ifelse ball-rolling-duration = 0 [
-          let visible-beetles beetles in-radius visible-beetles-radius with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
+          let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
           set ball-rolling-duration 60 - ((count visible-beetles) * 3)
           if ball-rolling-duration < 30 [
           set ball-rolling-duration 30]
@@ -181,7 +187,7 @@ to go  ; forever button
       ] ] [
         ifelse heading-degrees = 0 [ establish-heading ]
         [ if nested = false [
-          ifelse memory-level > memory-level-threshold [
+          ifelse memory-level > (memory-level-threshold * heading-memory-impact) [
             establish-heading
           ] [
             set memory-level memory-level + 1
@@ -220,10 +226,12 @@ to create-beetle ; beetle setup
     set spatial-awareness random-in-range 1 10
     set current-obstacle-danced false
     set dances-count 0
-    set visible-beetles-radius random-in-range 20 50
+    set visible-beetles-radius random-in-range 20 30
     set memory-level-threshold random-in-range 1000 2000
     set memory-level 0
     set ball-rolling-duration 0
+    set minimum-dist-from-source random-in-range 80 100 ; in patches
+    set minimum-last-encounter-time random-in-range 25 35 ; in ticks
   ]
 end
 
@@ -271,7 +279,7 @@ to roll-ball
 end
 
 to establish-heading
-  ifelse dance-counter < dance-duration and spatial-awareness < 7 [
+  ifelse dance-counter < dance-duration and spatial-awareness  < 7 [
     dance
 
   ] [
@@ -282,7 +290,7 @@ to establish-heading
       set memory-level 0
     ]
     set initial-dance-total initial-dance-total + 1
-    let visible-beetles beetles in-radius visible-beetles-radius with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
+    let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
 
     ifelse count visible-beetles >= 1 [
       ifelse count visible-beetles = 1 [
@@ -358,8 +366,10 @@ to wander  ;; turtle procedure
     ask balls with [ball-who = beetles-ball] [
      set color grey
       ]
+    set total-distances-walked lput walked-distance total-distances-walked
+    set total-durations-walked lput walk-duration total-durations-walked
   ] [
-  let visible-beetles other beetles in-radius visible-beetles-radius
+  let visible-beetles other beetles in-radius (visible-beetles-radius * seen-radius-impact)
   ifelse count visible-beetles > 0
   [
     ; at first checking for beetles in vicinity to adapt to
@@ -401,7 +411,7 @@ to wander  ;; turtle procedure
 
   ; to nest, the beetle has to be far enough from the source and not have
   ; encountered another beetle for some time
-  ifelse ((distancexy 0 0) < minimum-dist-from-source) or (last-encounter < minimum-last-encounter-time) [
+  ifelse ((distancexy 0 0) < (minimum-dist-from-source * distance-threshold-impact)) or (last-encounter < (minimum-last-encounter-time * last-seen-threshold-impact)) [
 
     ; at first we need to check if there's an obstacle ahead of original heading
     ifelse obstacle? (heading-degrees) [
@@ -458,6 +468,8 @@ to wander  ;; turtle procedure
         ] [
           ; got stuck somewhere somehow
           set nested true
+          set total-distances-walked lput walked-distance total-distances-walked
+          ;show total-distances-walked
           set-current-plot "Walked distance vs stopping time"
           set-current-plot-pen "pen-0"
           set-plot-pen-mode 2
@@ -470,6 +482,7 @@ to wander  ;; turtle procedure
           ask balls with [ball-who = beetles-ball] [
             set color grey
           ]
+          set total-durations-walked lput walk-duration total-durations-walked
         ]
       ]
     ] [
@@ -499,11 +512,13 @@ to wander  ;; turtle procedure
   ] [
     ; nest if far enough and haven't seen anyone for long enough
     set nested true
+    set total-distances-walked lput walked-distance total-distances-walked
     set-current-plot "Walked distance vs stopping time"
     set-current-plot-pen "pen-0"
     set-plot-pen-mode 2
     set-plot-pen-color one-of base-colors
     let walk-duration ticks - starting-tick
+    set total-durations-walked lput walk-duration total-durations-walked
     plotxy walk-duration walked-distance
     set color grey
     let beetles-ball ball-id
@@ -535,8 +550,8 @@ to push-ball [#some-heading] ; beetle and ball actually moving
     set step-length step-length - (patch-roughness-impact * roughness) - (this-ball-roughness * ball-roughness-impact)
     ;show step-length
     ;show "that's it"
-    if step-length < 0.01 [
-    set step-length 0.01]
+    if step-length < 0.1 [
+    set step-length 0.1]
     ;set step-length round (step-length * 10)
   ]
   ; show step-length
@@ -847,6 +862,81 @@ SLIDER
 43
 ball-roughness-impact
 ball-roughness-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+201
+59
+293
+92
+distance-threshold-impact
+distance-threshold-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+297
+59
+389
+92
+last-seen-threshold-impact
+last-seen-threshold-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+393
+59
+485
+92
+seen-radius-impact
+seen-radius-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+489
+59
+581
+92
+heading-memory-impact
+heading-memory-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+201
+109
+293
+142
+spatial-awareness-impact
+spatial-awareness-impact
 0
 10
 1.0

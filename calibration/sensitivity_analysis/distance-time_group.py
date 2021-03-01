@@ -74,6 +74,7 @@ if __name__ == '__main__':
 
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 
+    # add patch roughness!
     problem = {
         'names': ['distance-threshold-impact', 'last-seen-threshold-impact', 'seen-radius-impact', 'heading-memory-impact'],
         'bounds': bounds,

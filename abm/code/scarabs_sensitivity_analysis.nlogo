@@ -8,21 +8,34 @@ globals [
   ;patch-roughness-impact
   ;protonum-width-impact
   ;ball-roughness-impact
+  ;distance-threshold-impact
+  ;last-seen-threshold-impact
+  ;seen-radius-impact
+  ;heading-memory-impact
+  ;spatial-awareness-impact
   tick-duration
   dance-duration
   ; is there a less boring way to do this?
   initial-dance-total
   initial-dance-danced
+  initial-dance-percentage
   deviation-dance-total
   deviation-dance-danced
+  deviation-dance-percentage
   ; deviation-dance-angle TODO
   free-path-dance-total
   free-path-dance-danced
+  free-path-dance-percentage
   obstacle-dance-total
   obstacle-dance-danced
+  obstacle-dance-percentage
   total-mean-speed
   total-distances-walked
   total-durations-walked
+  initial-dance-threshold
+  deviation-dance-probability
+  free-dance-probability
+  obstacle-dance-probability
 ]
 
 breed [beetles beetle]
@@ -82,21 +95,28 @@ to setup
   set patch-length 10 ; one patch equals 10 centimeters maybe
   set tick-duration 1 ; one tick is 1 second maybe
   set dance-duration 20 ; in ticks
-  ; ...
+  ; ... 1 to avoid division by zero
   set initial-dance-total 0
   set initial-dance-danced 0
+  set initial-dance-percentage 0
   set deviation-dance-total 0
   set deviation-dance-danced 0
+  set deviation-dance-percentage 0
   set free-path-dance-total 0
   set free-path-dance-danced 0
+  set free-path-dance-percentage 0
   set obstacle-dance-total 0
   set obstacle-dance-danced 0
+  set obstacle-dance-percentage 0
   ;set patch-roughness-impact 1
   set total-mean-speed 0
   ; py:setup py:python
   set total-distances-walked []
   set total-durations-walked []
-
+  set initial-dance-threshold 5
+  set deviation-dance-probability 5
+  set free-dance-probability 5
+  set obstacle-dance-probability 5
 end
 
 to setup-patches
@@ -196,6 +216,18 @@ to go  ; forever button
     update-heading-plot
 
   ]
+  if initial-dance-total != 0 [
+    set initial-dance-percentage (initial-dance-danced / initial-dance-total) * 100]
+
+  if deviation-dance-total != 0 [
+    set deviation-dance-percentage (deviation-dance-danced / deviation-dance-total) * 100
+  ]
+  if free-path-dance-total != 0 [
+    set free-path-dance-percentage (free-path-dance-danced / free-path-dance-total) * 100
+  ]
+  if obstacle-dance-total != 0 [
+    set obstacle-dance-percentage (obstacle-dance-danced / obstacle-dance-total) * 100
+  ]
   tick
 
 end
@@ -274,7 +306,7 @@ to roll-ball
 end
 
 to establish-heading
-  ifelse dance-counter < dance-duration and spatial-awareness < 7 [
+  ifelse dance-counter < dance-duration and (spatial-awareness * spatial-awareness-impact) < (initial-dance-threshold * initial-dancing-probability-impact) [
     dance
 
   ] [
@@ -412,18 +444,22 @@ to wander  ;; turtle procedure
     ifelse obstacle? (heading-degrees) [
 
       ifelse dance-counter < dance-duration and current-obstacle-danced = false [
-        ;show dance-counter
-        if dance-counter = 0 [
-          set obstacle-dance-total obstacle-dance-total + 1
-          set obstacle-dance-danced obstacle-dance-danced + 1
-          set dances-count dances-count + 1
-        ]
-          dance
+          ifelse (spatial-awareness * spatial-awareness-impact) < (obstacle-dance-probability * obstacle-dancing-probability-impact) [
+            if dance-counter = 0 [
+              set obstacle-dance-danced obstacle-dance-danced + 1
+              set obstacle-dance-total obstacle-dance-total + 1
+              set dances-count dances-count + 1
+            ]
+            dance
+            set current-obstacle-danced true
+          ] [
+            set obstacle-dance-total obstacle-dance-total + 1
+            set current-obstacle-danced true
+          ]
         ] [
          ; if dance-counter != 0 [
            ; set obstacle-dance-danced obstacle-dance-danced + 1
          ;]
-        set current-obstacle-danced true
         set dance-counter 0
 
         let found-heading false
@@ -445,16 +481,22 @@ to wander  ;; turtle procedure
           set heading-deviation-degrees heading-degrees - secondary-heading
           set headings-deviation-list lput heading-deviation-degrees headings-deviation-list
           ifelse course-deviation > max-deviation [
-            ;ifelse dance-counter < dance-duration [
-              ;dance
-            ;] [
               set dance-counter 0
-            ;set dances-count dances-count + 1
+              ;show "might dance on deviation"
               set deviation-dance-total deviation-dance-total + 1
-              set deviation-dance-danced deviation-dance-danced + 1
               set course-deviation 0
+              if (spatial-awareness * spatial-awareness-impact) < (deviation-dance-probability * deviation-dancing-probability-impact) [
+                ;ifelse dance-counter < dance-duration [
+                 ; dance ] [
+                ;] [
+                ;set dance-counter 0
+                ;show "DID DANCE ON DEVIATION"
+                set deviation-dance-danced deviation-dance-danced + 1
+              ;]
+                ; TODO actually dance
+
+              ]
               push-ball secondary-heading
-            ;]
           ] [
             ; move in the secondary direction
             push-ball secondary-heading
@@ -490,7 +532,7 @@ to wander  ;; turtle procedure
       ifelse course-deviation = 0 [
         push-ball heading-degrees
       ] [
-        ifelse  dance-counter < dance-duration and spatial-awareness < 8 [
+        ifelse  dance-counter < dance-duration and (spatial-awareness * spatial-awareness-impact) < (free-dance-probability * free-dancing-probability-impact) [
           dance
         ] [
           if dance-counter != 0 [
@@ -757,46 +799,46 @@ PENS
 "default" 1.0 1 -10141563 true "" ""
 
 MONITOR
-1129
-76
-1350
-121
+1105
+28
+1326
+73
 Dancing when establishing heading %
-(initial-dance-danced / initial-dance-total) * 100
-17
+initial-dance-percentage
+2
 1
 11
 
 MONITOR
-1129
-128
-1380
-173
+1105
+77
+1356
+122
 Dancing when course deviates too much %
-(deviation-dance-danced / deviation-dance-total) * 100
-17
+deviation-dance-percentage
+2
 1
 11
 
 MONITOR
-1129
-254
-1357
-299
+1105
+173
+1333
+218
 Dancing when the path is free again %
-(free-path-dance-danced / free-path-dance-total) * 100
-17
+free-path-dance-percentage
+2
 1
 11
 
 MONITOR
-1130
-203
-1379
-248
+1106
+125
+1355
+170
 Dancing when encountering an obstacle %
-(obstacle-dance-danced / obstacle-dance-total) * 100
-17
+obstacle-dance-percentage
+2
 1
 11
 
@@ -917,6 +959,81 @@ SLIDER
 92
 heading-memory-impact
 heading-memory-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1107
+301
+1268
+334
+spatial-awareness-impact
+spatial-awareness-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1204
+224
+1296
+257
+initial-dancing-probability-impact
+initial-dancing-probability-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1106
+259
+1198
+292
+deviation-dancing-probability-impact
+deviation-dancing-probability-impact
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1106
+224
+1198
+257
+obstacle-dancing-probability-impact
+obstacle-dancing-probability-impact
+0
+10
+1.1
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1205
+260
+1297
+293
+free-dancing-probability-impact
+free-dancing-probability-impact
 0
 10
 1.0

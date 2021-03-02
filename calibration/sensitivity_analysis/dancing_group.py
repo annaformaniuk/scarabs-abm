@@ -36,6 +36,7 @@ def run_simulation(experiment):
 
     print('Experiment', experiment)
     netlogo.command('setup')
+    save_value = next(iter(experiment.values()))
 
     # Set the input parameters
     for key, value in experiment.items():
@@ -59,9 +60,9 @@ def run_simulation(experiment):
     last_state_obstacle = counts['obstacle-dance-percentage'].iloc[-1]
     last_state_free = counts['free-path-dance-percentage'].iloc[-1]
 
-    print(last_state_initial, last_state_deviation,
+    print(save_value, last_state_initial, last_state_deviation,
           last_state_obstacle, last_state_free)
-    return last_state_initial, last_state_deviation, last_state_obstacle, last_state_free
+    return save_value, last_state_initial, last_state_deviation, last_state_obstacle, last_state_free
 
 
 if __name__ == '__main__':
@@ -90,45 +91,73 @@ if __name__ == '__main__':
     # results = pd.DataFrame(results)
 
     for i in range(len(problem['names'])):
-        for value in problem['bounds']:
-            netlogo.load_model(modelfile)
-            experiment = {problem['names'][i]: value}
-            initial, deviation, obstacle, free = run_simulation(
-                experiment)
+        # for value in problem['bounds']:
+        #     netlogo.load_model(modelfile)
+        #     experiment = {problem['names'][i]: value}
+        #     initial, deviation, obstacle, free = run_simulation(
+        #         experiment)
 
-            problem['initial_dancing'][i].append(initial)
-            problem['deviation_dancing'][i].append(deviation)
-            problem['obstacle_dancing'][i].append(obstacle)
-            problem['free_dancing'][i].append(free)
-                
+        #     problem['initial_dancing'][i].append(initial)
+        #     problem['deviation_dancing'][i].append(deviation)
+        #     problem['obstacle_dancing'][i].append(obstacle)
+        #     problem['free_dancing'][i].append(free)
+        with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
+            experiments = pd.DataFrame(problem['bounds'],
+                                       columns=[problem['names'][i]])
+            # placeholders
+            result_initial = np.empty_like(problem['bounds'])
+            result_deviation = np.empty_like(problem['bounds'])
+            result_obstacle = np.empty_like(problem['bounds'])
+            result_free = np.empty_like(problem['bounds'])
+            for save_value, last_state_initial, last_state_deviation, last_state_obstacle, last_state_free in executor.map(run_simulation, experiments.to_dict('records')):
+                print("receiving", save_value, last_state_initial,
+                      last_state_deviation, last_state_obstacle, last_state_free)
+                current_index = np.where(
+                    problem['bounds'] == input_value)[0][0]
+                print(current_index)
+
+                result_initial[current_index] = last_state_initial
+                result_deviation[current_index] = last_state_deviation
+                result_obstacle[current_index] = last_state_obstacle
+                result_free[current_index] = last_state_free
+
+            problem['initial_dancing'][i] = result_initial
+            problem['deviation_dancing'][i] = result_deviation
+            problem['obstacle_dancing'][i] = result_obstacle
+            problem['free_dancing'][i] = result_free
+
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
     ax1.set_xlabel('Multiplication factor')
     ax1.set_ylabel('Initial dancings percentage')
 
     for i in range(len(problem['names'])):
-        ax1.plot(problem['bounds'], problem['initial_dancing'][i], color=colors[i], label=problem['names'][i])
+        ax1.plot(problem['bounds'], problem['initial_dancing']
+                 [i], color=colors[i], label=problem['names'][i])
     ax1.legend()
 
     ax2.set_xlabel('Multiplication factor')
     ax2.set_ylabel('Deviation dancings percentage')
 
     for i in range(len(problem['names'])):
-        ax2.errorbar(problem['bounds'], problem['deviation_dancing'][i], color=colors[i], label=problem['names'][i])
+        ax2.errorbar(problem['bounds'], problem['deviation_dancing']
+                     [i], color=colors[i], label=problem['names'][i])
     ax2.legend()
 
     ax3.set_xlabel('Multiplication factor')
     ax3.set_ylabel('Obstacle dancings percentage')
 
     for i in range(len(problem['names'])):
-        ax3.errorbar(problem['bounds'], problem['obstacle_dancing'][i], color=colors[i], label=problem['names'][i])
+        ax3.errorbar(problem['bounds'], problem['obstacle_dancing']
+                     [i], color=colors[i], label=problem['names'][i])
     ax3.legend()
 
     ax4.set_xlabel('Multiplication factor')
     ax4.set_ylabel('Free path dancings percentage')
 
     for i in range(len(problem['names'])):
-        ax4.errorbar(problem['bounds'], problem['free_dancing'][i], color=colors[i], label=problem['names'][i])
+        ax4.errorbar(problem['bounds'], problem['free_dancing']
+                     [i], color=colors[i], label=problem['names'][i])
     ax4.legend()
 
     plt.show()

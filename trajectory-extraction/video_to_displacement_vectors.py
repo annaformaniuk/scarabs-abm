@@ -5,6 +5,7 @@ import string
 import os
 import re
 import argparse
+import math
 from frame_stitching import stitching, stitching_alt
 from object_detection.yolo_detect_picture import Yolo_detector
 from frame_stitching.warping import get_warp_matrix
@@ -48,6 +49,14 @@ def get_centroid(bounds):
     return (x, y)
 
 
+def get_diagonal(bounds):
+    width = bounds[0] + bounds[2]
+    height = bounds[1] + bounds[3]
+    diagonal = math.sqrt(width**2 + height**2)
+    print("diagonal:", diagonal)
+    return int(diagonal)
+
+
 def get_displacement_vector(first_coords, second_coords):
     scalar_x = second_coords[0] - first_coords[0]
     scalar_y = second_coords[1] - first_coords[1]
@@ -56,16 +65,25 @@ def get_displacement_vector(first_coords, second_coords):
     return (scalar_x, scalar_y)
 
 
-def reproduce_trajectory(displacement_vectors):
+def reproduce_trajectory(displacement_vectors, diagonals):
+    reference_diagonal = diagonals[0]
+         
     vectors_array = np.array(displacement_vectors)
-    # print(vectors_array)
-    starting_point = vectors_array.sum(axis=0)
+    diagonals_array = np.array(diagonals)
+
+    # scaling the displacement vectors to the size of the ball because
+    # it's the only constant object in the frames
+    scale = reference_diagonal/diagonals_array
+    diagonals_scaled_floats = np.multiply(vectors_array, scale[:, np.newaxis])
+    diagonals_scaled = diagonals_scaled_floats.astype(int)
+
+    starting_point = diagonals_scaled.sum(axis=0)
     starting_point_array = np.array(starting_point)
     # to start in the middle
     width = abs(starting_point[0]) + abs(starting_point[0])
     height = abs(starting_point[1]) + abs(starting_point[1])
 
-    trajectory = starting_point_array + np.cumsum(vectors_array, axis=0)
+    trajectory = starting_point_array + np.cumsum(diagonals_scaled, axis=0)
     trajectory = np.insert(trajectory, 0, starting_point_array, axis=0)
     print(trajectory)
 
@@ -98,6 +116,8 @@ if (os.path.isfile(args["video_path"])):
     contours = Contours_detector()
     kernel = np.ones((15, 15), np.uint8)
     displacement_vectors = []
+    ball_diagonals = []
+    first_ball_diagonal = None
     first_coords = None
     second_coords = None
     total_frames_count = count_frames(args["video_path"])
@@ -134,6 +154,11 @@ if (os.path.isfile(args["video_path"])):
                 if(beetle_bounds != None):
                     first_coords = get_centroid(beetle_bounds["box"])
 
+                ball_bounds = next(
+                    (x for x in objects if x["label"] == "Ball"), None)
+                if(ball_bounds != None):
+                    first_ball_diagonal = get_diagonal(ball_bounds["box"])
+
             if (i > 1 and i < 6000 and i % 30 == 0):
                 height, width, depth = frame.shape
                 objects = yolo.detect_objects(frame)
@@ -155,6 +180,15 @@ if (os.path.isfile(args["video_path"])):
                     (x for x in objects if x["label"] == "Beetle"), None)
                 if(beetle_bounds != None):
                     second_coords = get_centroid(beetle_bounds["box"])
+
+                ball_bounds = next(
+                    (x for x in objects if x["label"] == "Ball"), None)
+                ball_diagonal = None
+                if(ball_bounds != None):
+                    ball_diagonal = get_diagonal(ball_bounds["box"])
+                else:
+                    ball_diagonal = first_ball_diagonal
+                ball_diagonals.append(ball_diagonal)
 
                 # finally stitching the images together and replacing variables
                 matched_image, matched_coords = stitching_alt.match_pairwise(
@@ -181,7 +215,10 @@ if (os.path.isfile(args["video_path"])):
             # if (i == total_frames_count - 1):
 
             if (i > total_frames_count - 10):
-                reproduce_trajectory(displacement_vectors)
+                print(ball_diagonals)
+                # ball_diagonals = np.array(
+                #     map(lambda x: first_ball_diagonal if x == None else x, ball_diagonals))
+                reproduce_trajectory(displacement_vectors, ball_diagonals)
                 break
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i == total_frames_count:

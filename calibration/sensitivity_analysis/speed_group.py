@@ -2,9 +2,26 @@ import os
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+from multiprocessing import Pool
 
 import pyNetLogo
 
+def initializer(modelfile):
+    '''initialize a subprocess
+    
+    Parameters
+    ----------
+    modelfile : str
+    
+    '''
+    
+    # we need to set the instantiated netlogo
+    # link as a global so run_simulation can
+    # use it
+    global netlogo
+    
+    netlogo = pyNetLogo.NetLogoLink(gui=False)
+    netlogo.load_model(modelfile)
 
 def run_simulation(experiment):
     '''run a netlogo model
@@ -18,6 +35,7 @@ def run_simulation(experiment):
     print('Experiment', experiment)
     netlogo.command('setup')
 
+    save_value = next(iter(experiment.values()))
     # Set the input parameters
     for key, value in experiment.items():
         if key == 'random-seed':
@@ -39,15 +57,15 @@ def run_simulation(experiment):
 
     mean = trimmed.mean()
     std = np.std(trimmed)
-    print(mean, std)
-    return mean, std
+    print("sending", save_value, mean, std)
+    return save_value, mean, std
 
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
         r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
 
-    netlogo = pyNetLogo.NetLogoLink(gui=False)
+    # netlogo = pyNetLogo.NetLogoLink(gui=False)
 
     bounds = np.arange(0, 2.0, 0.2)
 
@@ -61,13 +79,29 @@ if __name__ == '__main__':
     }
 
     for i in range(len(problem['names'])):
-        for value in problem['bounds']:
-            netlogo.load_model(modelfile)
-            experiment = {problem['names'][i]: value}
-            mean, std = run_simulation(experiment)
+    #     for value in problem['bounds']:
+    #         netlogo.load_model(modelfile)
+    #         experiment = {problem['names'][i]: value}
+    #         mean, std = run_simulation(experiment)
 
-            problem['speeds'][i].append(mean)
-            problem['stds'][i].append(std)
+    #         problem['speeds'][i].append(mean)
+    #         problem['stds'][i].append(std)
+
+        with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
+            experiments = pd.DataFrame(problem['bounds'],
+                               columns=[problem['names'][i]])
+            # placeholders
+            result_speeds = np.empty_like(problem['bounds'])
+            result_stds = np.empty_like(problem['bounds'])
+            for input_value, speed, std in executor.map(run_simulation, experiments.to_dict('records')):
+                print("receiving", input_value, speed, std)
+                current_index = np.where(problem['bounds']==input_value)[0][0]
+                print(current_index)
+                result_speeds[current_index] = speed
+                result_stds[current_index] = std
+
+            problem['speeds'][i] = result_speeds
+            problem['stds'][i] = result_stds
 
     fig = plt.figure()
     ax = fig.add_subplot(111)

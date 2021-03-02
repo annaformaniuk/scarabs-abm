@@ -109,8 +109,8 @@ if __name__ == '__main__':
             result_deviation = np.empty_like(problem['bounds'])
             result_obstacle = np.empty_like(problem['bounds'])
             result_free = np.empty_like(problem['bounds'])
-            for save_value, last_state_initial, last_state_deviation, last_state_obstacle, last_state_free in executor.map(run_simulation, experiments.to_dict('records')):
-                print("receiving", save_value, last_state_initial,
+            for input_value, last_state_initial, last_state_deviation, last_state_obstacle, last_state_free in executor.map(run_simulation, experiments.to_dict('records')):
+                print("receiving", input_value, last_state_initial,
                       last_state_deviation, last_state_obstacle, last_state_free)
                 current_index = np.where(
                     problem['bounds'] == input_value)[0][0]

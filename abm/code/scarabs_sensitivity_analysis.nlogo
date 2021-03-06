@@ -229,19 +229,16 @@ to go  ; forever button
       (py:run
         "bins = np.arange(-360, 361, 30)"
         "all_histograms = []"
-        "average_hist = []"
+        "#average_hist = []"
         "for deviation in all_deviations:"
         "    if(len(deviation) > 0):"
         "        current_histogram = np.histogram(deviation, bins=bins)"
         "        all_histograms.append(current_histogram)"
-        "average_hist = np.mean(all_histograms, axis=0)"
-        "print(average_hist)"
+        "#average_hist = np.mean(all_histograms, axis=0)"
+
 
       )
-      set average-headings py:runresult "np.mean(all_histograms, axis=0)"
-      show "here it comes"
-      show average-headings
-      show "that's it"
+      set average-headings py:runresult "np.mean(all_histograms, axis=0)[0]"
     ]
 
   ]

@@ -36,6 +36,7 @@ globals [
   deviation-dance-probability
   free-dance-probability
   obstacle-dance-probability
+  average-headings
 ]
 
 breed [beetles beetle]
@@ -75,6 +76,7 @@ beetles-own [
   dances-count
   minimum-dist-from-source
   minimum-last-encounter-time
+  walking
 ]
 
 balls-own [
@@ -87,6 +89,9 @@ balls-own [
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 to setup
+  py:setup py:python
+  py:run "import numpy as np"
+  py:run "import math"
   clear-all
   set-default-shape beetles "bug"
   set-default-shape balls "circle"
@@ -108,15 +113,14 @@ to setup
   set obstacle-dance-total 0
   set obstacle-dance-danced 0
   set obstacle-dance-percentage 0
-  ;set patch-roughness-impact 1
   set total-mean-speed 0
-  ; py:setup py:python
   set total-distances-walked []
   set total-durations-walked []
   set initial-dance-threshold 5
   set deviation-dance-probability 5
   set free-dance-probability 5
   set obstacle-dance-probability 5
+  set average-headings []
 end
 
 to setup-patches
@@ -176,6 +180,10 @@ end
 
 
 to go  ; forever button
+  if ticks < 2 [
+    show "create beetle"
+    create-beetle
+  ]
   let beetles-at-source
     count beetles-on patches with [
       (pxcor >= -10 and pxcor <= 10) and (pycor <= 10  and pycor >= -10)
@@ -207,13 +215,34 @@ to go  ; forever button
           ] [
             set memory-level memory-level + 1
             wander
+            set walking true
         ] ] ]
       ]
   ]
     ;show mean [average-speed] of beetles
     set total-mean-speed mean [current-speed] of beetles
-
     update-heading-plot
+
+    if count beetles with [nested = false and walking = true] > 0 [
+
+      py:set "all_deviations" [ headings-deviation-list ] of beetles
+      (py:run
+        "bins = np.arange(-360, 361, 30)"
+        "all_histograms = []"
+        "average_hist = []"
+        "for deviation in all_deviations:"
+        "    if(len(deviation) > 0):"
+        "        current_histogram = np.histogram(deviation, bins=bins)"
+        "        all_histograms.append(current_histogram)"
+        "average_hist = np.mean(all_histograms, axis=0)"
+        "print(average_hist)"
+
+      )
+      set average-headings py:runresult "np.mean(all_histograms, axis=0)"
+      show "here it comes"
+      show average-headings
+      show "that's it"
+    ]
 
   ]
   if initial-dance-total != 0 [
@@ -259,6 +288,7 @@ to create-beetle ; beetle setup
     set ball-rolling-duration 0
     set minimum-dist-from-source random-in-range 80 100 ; in patches
     set minimum-last-encounter-time random-in-range 25 35 ; in ticks
+    set walking false
   ]
 end
 

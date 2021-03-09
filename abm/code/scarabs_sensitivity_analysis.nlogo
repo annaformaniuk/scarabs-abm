@@ -439,21 +439,27 @@ to wander  ;; turtle procedure
       ifelse obstacle? (heading-degrees) [
         ; if yes - must dance first
         ifelse dance-counter < dance-duration and current-obstacle-danced = false [
+
           ifelse (spatial-awareness * spatial-awareness-impact) < (obstacle-dance-probability * obstacle-dancing-probability-impact) [
-            if dance-counter = 0 [
-              set obstacle-dance-danced obstacle-dance-danced + 1
-              set obstacle-dance-total obstacle-dance-total + 1
+            if dance-counter < dance-duration [
               set dances-count dances-count + 1
+              dance
+              if (dance-counter = dance-duration) [
+                set current-obstacle-danced true
+                set dance-counter 0
+                set obstacle-dance-danced obstacle-dance-danced + 1
+                set obstacle-dance-total obstacle-dance-total + 1
+              ]
             ]
-            dance
-            set current-obstacle-danced true
+
           ] [
             set obstacle-dance-total obstacle-dance-total + 1
             set current-obstacle-danced true
           ]
+
         ] [
 
-          set dance-counter 0
+          ;set dance-counter 0
 
           ; then decide where to walk to avoid the obstacle
           let found-heading false
@@ -476,21 +482,24 @@ to wander  ;; turtle procedure
 
             ; if the course has deviated too much, must dance too
             ifelse course-deviation > max-deviation [
-              set dance-counter 0
-              ;show "might dance on deviation"
-              set deviation-dance-total deviation-dance-total + 1
-              set course-deviation 0
-              if (spatial-awareness * spatial-awareness-impact) < (deviation-dance-probability * deviation-dancing-probability-impact) [
-                ;ifelse dance-counter < dance-duration [
-                ; dance ] [
-                ;] [
-                ;set dance-counter 0
-                ;show "DID DANCE ON DEVIATION"
-                set deviation-dance-danced deviation-dance-danced + 1
-                ;]
-                ; TODO actually dance
+              ifelse (spatial-awareness * spatial-awareness-impact) < (deviation-dance-probability * deviation-dancing-probability-impact) [
+                if dance-counter < dance-duration [
+                  dance
+                  if (dance-counter = dance-duration) [
+                    set dances-count dances-count + 1
+                    set dance-counter 0
+                    set deviation-dance-danced deviation-dance-danced + 1
+                    set deviation-dance-total deviation-dance-total + 1
+                    set course-deviation 0
+                    push-ball secondary-heading heading-deviation-degrees
+                  ]
+                ]
+
+              ] [
+                set course-deviation 0
+                set deviation-dance-total deviation-dance-total + 1
+                push-ball secondary-heading heading-deviation-degrees
               ]
-              push-ball secondary-heading heading-deviation-degrees
             ] [
               ; move in the secondary direction
               push-ball secondary-heading heading-deviation-degrees

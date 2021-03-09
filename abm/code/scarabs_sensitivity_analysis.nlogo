@@ -14,7 +14,6 @@ globals [
   deviation-dance-total
   deviation-dance-danced
   deviation-dance-percentage
-  ; deviation-dance-angle TODO
   free-path-dance-total
   free-path-dance-danced
   free-path-dance-percentage

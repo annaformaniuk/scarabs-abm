@@ -14,7 +14,7 @@ globals [
   deviation-dance-total
   deviation-dance-danced
   deviation-dance-percentage
-  ; deviation-dance-angle TODO
+
   free-path-dance-total
   free-path-dance-danced
   free-path-dance-percentage
@@ -482,10 +482,7 @@ to wander  ;; turtle procedure
 
             ; if the course has deviated too much, must dance too
             ifelse course-deviation > max-deviation [
-
               ifelse (spatial-awareness * spatial-awareness-impact) < (deviation-dance-probability * deviation-dancing-probability-impact) [
-                show "should dance!"
-                show dance-counter
                 if dance-counter < dance-duration [
                   dance
                   if (dance-counter = dance-duration) [

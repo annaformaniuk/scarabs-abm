@@ -441,11 +441,11 @@ to wander  ;; turtle procedure
 
           ifelse (spatial-awareness * spatial-awareness-impact) < (obstacle-dance-probability * obstacle-dancing-probability-impact) [
             if dance-counter < dance-duration [
-              set dances-count dances-count + 1
               dance
-              if (dance-counter = dance-duration) [
+              if (dance-counter = dance-duration - 1) [
                 set current-obstacle-danced true
                 set dance-counter 0
+                set dances-count dances-count + 1
                 set obstacle-dance-danced obstacle-dance-danced + 1
                 set obstacle-dance-total obstacle-dance-total + 1
               ]
@@ -484,7 +484,7 @@ to wander  ;; turtle procedure
               ifelse (spatial-awareness * spatial-awareness-impact) < (deviation-dance-probability * deviation-dancing-probability-impact) [
                 if dance-counter < dance-duration [
                   dance
-                  if (dance-counter = dance-duration) [
+                  if (dance-counter = dance-duration - 1) [
                     set dances-count dances-count + 1
                     set dance-counter 0
                     set deviation-dance-danced deviation-dance-danced + 1
@@ -598,7 +598,7 @@ end
 to-report find-secondary-heading [#initial-heading]
   let other-heading 0
   let found-heading false
-  foreach [15 30 45 60 75 90 105 130]
+  foreach [15 30 45 60 75 90 105 130 150 180 ]
   [
     x ->
       if (found-heading = false) [
@@ -612,7 +612,9 @@ to-report find-secondary-heading [#initial-heading]
         report other-heading
         ]
        ]
+      ;report #initial-heading
      ]
+    ;report #initial-heading
   ]
 end
 
@@ -846,26 +848,6 @@ obstacle-dance-percentage
 2
 1
 11
-
-PLOT
-1128
-352
-1367
-538
-Cumulative dances count
-Seconds
-Count
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -8630108 true "" "if count beetles > 0 [plot max [dances-count] of beetles]"
-"pen-1" 1.0 0 -16777216 true "" "if count beetles > 0 [plot mean [dances-count] of beetles]"
-"pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
 
 SLIDER
 201

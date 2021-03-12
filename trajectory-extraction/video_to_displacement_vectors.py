@@ -13,7 +13,9 @@ from contours.contours_hed import Contours_detector
 from object_detection.shadow_detection import detect_shadow
 import matplotlib.pyplot as plt
 from imutils.video import count_frames
-# python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720.mp4"
+# from geojson import Point, Feature, FeatureCollection, dump, lat, lon
+import json
+# python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720_supershort.mp4"
 
 
 # construct the argument parser and parse the arguments
@@ -56,6 +58,30 @@ def get_diagonal(bounds):
     print("diagonal:", diagonal)
     return int(diagonal)
 
+def save_geojson(points, name, ball_diagonal):
+    empty_array = []
+    points_json = {
+        "properties": [
+            {
+                "filename": name,
+                "ball_pixelsize": ball_diagonal
+            }
+        ],
+        "points": [{"point_coords": [0,0]}]
+    }
+
+    for point in points:
+        points_json["points"].append({
+            "point_coords": point.tolist()
+        })
+
+    points_json["points"].pop(0)
+
+    print(points_json)
+
+    filename = "trajectory_"+ name + ".json"
+    with open(filename, 'w') as f:
+        json.dump(points_json, f)
 
 def get_displacement_vector(first_coords, second_coords):
     scalar_x = second_coords[0] - first_coords[0]
@@ -65,7 +91,7 @@ def get_displacement_vector(first_coords, second_coords):
     return (scalar_x, scalar_y)
 
 
-def reproduce_trajectory(displacement_vectors, diagonals):
+def reproduce_trajectory(displacement_vectors, diagonals, name):
     reference_diagonal = diagonals[0]
          
     vectors_array = np.array(displacement_vectors)
@@ -104,10 +130,12 @@ def reproduce_trajectory(displacement_vectors, diagonals):
     black_img = cv2.polylines(black_img, [pts],
                               isClosed, color, thickness)
 
-    cv2.imshow('black_img', black_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    cv2.imwrite('trajectory_reconstruction.png', black_img)
+    # cv2.imshow('black_img', black_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # cv2.imwrite('trajectory_reconstruction.png', black_img)
+
+    save_geojson(trajectory, name, reference_diagonal)
 
 
 if (os.path.isfile(args["video_path"])):
@@ -122,6 +150,8 @@ if (os.path.isfile(args["video_path"])):
     second_coords = None
     total_frames_count = count_frames(args["video_path"])
     print('total frames count: ', total_frames_count)
+
+    filename = os.path.splitext(os.path.basename(args["video_path"]))[0]
 
     while True:
         ret, frame = cap.read()
@@ -218,7 +248,7 @@ if (os.path.isfile(args["video_path"])):
                 print(ball_diagonals)
                 # ball_diagonals = np.array(
                 #     map(lambda x: first_ball_diagonal if x == None else x, ball_diagonals))
-                reproduce_trajectory(displacement_vectors, ball_diagonals)
+                reproduce_trajectory(displacement_vectors, ball_diagonals, filename)
                 break
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i == total_frames_count:

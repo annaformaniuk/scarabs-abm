@@ -15,12 +15,14 @@ import matplotlib.pyplot as plt
 from imutils.video import count_frames
 # from geojson import Point, Feature, FeatureCollection, dump, lat, lon
 import json
-# python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720_supershort.mp4"
+# python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720_supershort.mp4" --ball_size 3
 
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-video_path", "--video_path", required=True,
+                help="Path to the video")
+ap.add_argument("-ball_size", "--ball_size", required=True,
                 help="Path to the video")
 args = vars(ap.parse_args())
 
@@ -58,13 +60,14 @@ def get_diagonal(bounds):
     print("diagonal:", diagonal)
     return int(diagonal)
 
-def save_geojson(points, name, ball_diagonal):
+def save_geojson(points, name, ball_diagonal, ball_size):
     empty_array = []
     points_json = {
         "properties": [
             {
                 "filename": name,
-                "ball_pixelsize": ball_diagonal
+                "ball_pixelsize": ball_diagonal,
+                "ball_realsize": ball_size
             }
         ],
         "points": [{"point_coords": [0,0]}]
@@ -91,7 +94,7 @@ def get_displacement_vector(first_coords, second_coords):
     return (scalar_x, scalar_y)
 
 
-def reproduce_trajectory(displacement_vectors, diagonals, name):
+def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size):
     reference_diagonal = diagonals[0]
          
     vectors_array = np.array(displacement_vectors)
@@ -135,7 +138,7 @@ def reproduce_trajectory(displacement_vectors, diagonals, name):
     # cv2.destroyAllWindows()
     # cv2.imwrite('trajectory_reconstruction.png', black_img)
 
-    save_geojson(trajectory, name, reference_diagonal)
+    save_geojson(trajectory, name, reference_diagonal, ball_size)
 
 
 if (os.path.isfile(args["video_path"])):
@@ -248,7 +251,7 @@ if (os.path.isfile(args["video_path"])):
                 print(ball_diagonals)
                 # ball_diagonals = np.array(
                 #     map(lambda x: first_ball_diagonal if x == None else x, ball_diagonals))
-                reproduce_trajectory(displacement_vectors, ball_diagonals, filename)
+                reproduce_trajectory(displacement_vectors, ball_diagonals, filename, args["ball_size"])
                 break
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i == total_frames_count:

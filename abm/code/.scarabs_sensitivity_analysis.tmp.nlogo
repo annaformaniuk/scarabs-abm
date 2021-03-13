@@ -28,6 +28,7 @@ globals [
   free-dance-probability
   obstacle-dance-probability
   average-headings
+
 ]
 
 breed [beetles beetle]
@@ -140,19 +141,23 @@ to setup-terrain
 end
 
 to setup-obstacles
-  ; option one
-  rectanglebase 50 55 55 10 black
-  ; option two
-  ask patches with [ pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 95 ]
-  [ set pcolor black
-  set roughness 1.0 ]
+  random-seed 20
+  repeat 42 [
+    let random-x random-in-range -230 230
+    let random-y random-in-range -230 230
+    let random-width random-in-range 2 12
+    let random-height random-in-range 2 12
+    rectanglebase random-x random-y random-width random-height black
+  ]
+
+
 end
 
 to rectanglebase [x y w l c]
   ask patches with
-  [ w >= pxcor and pxcor >= x
+  [ w + x >= pxcor and pxcor >= x
     and
-    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c
+    y + l >= pycor and pycor >= y ] [ set pcolor c
   set roughness 1.0]
 end
 
@@ -849,26 +854,6 @@ obstacle-dance-percentage
 1
 11
 
-PLOT
-1128
-352
-1367
-538
-Cumulative dances count
-Seconds
-Count
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -8630108 true "" "if count beetles > 0 [plot max [dances-count] of beetles]"
-"pen-1" 1.0 0 -16777216 true "" "if count beetles > 0 [plot mean [dances-count] of beetles]"
-"pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
-
 SLIDER
 201
 10
@@ -1048,6 +1033,26 @@ free-dancing-probability-impact
 1
 NIL
 HORIZONTAL
+
+PLOT
+1128
+352
+1367
+538
+Cumulative dances count
+Seconds
+Count
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -8630108 true "" "if count beetles > 0 [plot max [dances-count] of beetles]"
+"pen-1" 1.0 0 -16777216 true "" "if count beetles > 0 [plot mean [dances-count] of beetles]"
+"pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
 
 @#$#@#$#@
 ## WHAT IS IT?

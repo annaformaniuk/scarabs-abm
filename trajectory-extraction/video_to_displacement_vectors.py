@@ -54,28 +54,30 @@ def get_centroid(bounds):
 
 
 def get_diagonal(bounds):
-    width = bounds[0] + bounds[2]
-    height = bounds[1] + bounds[3]
+    print(bounds)
+    width = bounds[2] - bounds[0]
+    height = bounds[3] - bounds[1]
     diagonal = math.sqrt(width**2 + height**2)
     print("diagonal:", diagonal)
     return int(diagonal)
 
-def save_geojson(points, name, ball_diagonal, ball_size):
+def save_geojson(points, name, ball_diagonal, ball_size, i):
     empty_array = []
     points_json = {
         "properties": [
             {
                 "filename": name,
                 "ball_pixelsize": ball_diagonal,
-                "ball_realsize": ball_size
+                "ball_realsize": float(ball_size)
             }
         ],
-        "points": [{"point_coords": [0,0]}]
+        "points": [{"point_coords": [0,0], "frame_number": 0}]
     }
 
-    for point in points:
+    for num, point in enumerate(points):
         points_json["points"].append({
-            "point_coords": point.tolist()
+            "point_coords": point.tolist(),
+            "frame_number": i[num]
         })
 
     points_json["points"].pop(0)
@@ -94,7 +96,7 @@ def get_displacement_vector(first_coords, second_coords):
     return (scalar_x, scalar_y)
 
 
-def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size):
+def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size, i):
     reference_diagonal = diagonals[0]
          
     vectors_array = np.array(displacement_vectors)
@@ -136,9 +138,9 @@ def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size):
     # cv2.imshow('black_img', black_img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    # cv2.imwrite('trajectory_reconstruction.png', black_img)
+    cv2.imwrite('trajectory_reconstruction_SHORT.png', black_img)
 
-    save_geojson(trajectory, name, reference_diagonal, ball_size)
+    save_geojson(trajectory, name, reference_diagonal, ball_size, i)
 
 
 if (os.path.isfile(args["video_path"])):
@@ -148,6 +150,7 @@ if (os.path.isfile(args["video_path"])):
     kernel = np.ones((15, 15), np.uint8)
     displacement_vectors = []
     ball_diagonals = []
+    frame_counts = []
     first_ball_diagonal = None
     first_coords = None
     second_coords = None
@@ -191,8 +194,10 @@ if (os.path.isfile(args["video_path"])):
                     (x for x in objects if x["label"] == "Ball"), None)
                 if(ball_bounds != None):
                     first_ball_diagonal = get_diagonal(ball_bounds["box"])
+                
+                frame_counts.append(i)
 
-            if (i > 1 and i < 6000 and i % 30 == 0):
+            if (i > 1 and i < 6000 and i % 31 == 0):
                 height, width, depth = frame.shape
                 objects = yolo.detect_objects(frame)
                 # masking out detected objects so that they won't be used as keypoins
@@ -222,6 +227,7 @@ if (os.path.isfile(args["video_path"])):
                 else:
                     ball_diagonal = first_ball_diagonal
                 ball_diagonals.append(ball_diagonal)
+                frame_counts.append(i)
 
                 # finally stitching the images together and replacing variables
                 matched_image, matched_coords = stitching_alt.match_pairwise(
@@ -249,9 +255,10 @@ if (os.path.isfile(args["video_path"])):
 
             if (i > total_frames_count - 10):
                 print(ball_diagonals)
+                print(frame_counts)
                 # ball_diagonals = np.array(
                 #     map(lambda x: first_ball_diagonal if x == None else x, ball_diagonals))
-                reproduce_trajectory(displacement_vectors, ball_diagonals, filename, args["ball_size"])
+                reproduce_trajectory(displacement_vectors, ball_diagonals, filename, args["ball_size"], frame_counts)
                 break
 
             if cv2.waitKey(1) & 0xFF == ord('q') or i == total_frames_count:

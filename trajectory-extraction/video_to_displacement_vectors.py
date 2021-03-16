@@ -61,7 +61,7 @@ def get_diagonal(bounds):
     print("diagonal:", diagonal)
     return int(diagonal)
 
-def save_geojson(points, name, ball_diagonal, ball_size, i):
+def save_geojson(points, vectors_array, name, ball_diagonal, ball_size, i):
     empty_array = []
     points_json = {
         "properties": [
@@ -77,7 +77,8 @@ def save_geojson(points, name, ball_diagonal, ball_size, i):
     for num, point in enumerate(points):
         points_json["points"].append({
             "point_coords": point.tolist(),
-            "frame_number": i[num]
+            "frame_number": i[num],
+            "displacement_vector": vectors_array[num].tolist()
         })
 
     points_json["points"].pop(0)
@@ -140,7 +141,11 @@ def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size, i):
     # cv2.destroyAllWindows()
     cv2.imwrite('trajectory_reconstruction_SHORT.png', black_img)
 
-    save_geojson(trajectory, name, reference_diagonal, ball_size, i)
+    print(vectors_array)
+
+    vectors_array_full = np.concatenate(([[0,0]],vectors_array))
+    print(vectors_array_full)
+    save_geojson(trajectory, vectors_array_full, name, reference_diagonal, ball_size, i)
 
 
 if (os.path.isfile(args["video_path"])):

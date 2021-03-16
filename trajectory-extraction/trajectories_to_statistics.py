@@ -3,6 +3,7 @@ import os
 import argparse
 import json
 import math
+from scipy.stats import chisquare
 
 # python trajectories_to_statistics.py -input "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\trajectories" -output "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\trajectories"
 
@@ -44,6 +45,7 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     first_headings = headings[:5]
     default_heading = np.average(first_headings)
     print('default heading', default_heading)
+    
     # TODO handle circularity
 
     # Calculate deviations
@@ -53,6 +55,8 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     bins = np.arange(-360, 361, 30)
     histogram = np.histogram(heading_deviations, bins=bins)
     print('histogram', histogram)
+    histogram_stats = chisquare(histogram[0])
+    print('histogram stats', histogram_stats)
 
     return real_total_length, time_length, average_speed
 

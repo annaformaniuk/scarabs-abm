@@ -149,8 +149,6 @@ to setup-obstacles
     let random-height random-in-range 2 12
     rectanglebase random-x random-y random-width random-height black
   ]
-
-
 end
 
 to rectanglebase [x y w l c]
@@ -561,7 +559,7 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
   ]
   let step-length pronotum-width * protonum-width-impact
   let heading-adjusted (check-roughness #some-heading)
-  set heading-adjusted heading-adjusted + (random-prefix * 10 * this-ball-roughness)
+  set heading-adjusted heading-adjusted + (random-prefix * 10 * this-ball-roughness * ball-roughness-impact)
   let deviation-after heading-adjusted - #some-heading
   set heading heading-adjusted
   ask patch-ahead 1 [
@@ -603,23 +601,28 @@ end
 to-report find-secondary-heading [#initial-heading]
   let other-heading 0
   let found-heading false
-  foreach [15 30 45 60 75 90 105 130 150 180 ]
+  foreach [15 30 45 60 75 90 105 130 150 180 200 230 250 280 310]
   [
     x ->
       if (found-heading = false) [
         if not obstacle? (#initial-heading - x) [
         set other-heading #initial-heading - x
+        set found-heading true
         report other-heading
       ]
       if found-heading = false [
         if not obstacle? (#initial-heading + x) [
-        set other-heading #initial-heading + x
-        report other-heading
+          set found-heading true
+          set other-heading #initial-heading + x
+          report other-heading
         ]
        ]
       ;report #initial-heading
      ]
-    ;report #initial-heading
+
+  ]
+  if found-heading = false [
+    report #initial-heading - 180
   ]
 end
 
@@ -642,10 +645,10 @@ end
 to-report check-roughness [angle]
   let clockwise angle + 30
   let counter-clockwise angle - 30
-  if ( [roughness] of patch-at-heading-and-distance clockwise 1 < [roughness] of patch-at-heading-and-distance angle 1) [
+  if ( [roughness * patch-roughness-impact] of patch-at-heading-and-distance clockwise 1 < [roughness * patch-roughness-impact] of patch-at-heading-and-distance angle 1) [
     report clockwise
   ]
-  ifelse ( [roughness] of patch-at-heading-and-distance counter-clockwise 1 < [roughness] of patch-at-heading-and-distance angle 1) [
+  ifelse ( [roughness * patch-roughness-impact] of patch-at-heading-and-distance counter-clockwise 1 < [roughness * patch-roughness-impact] of patch-at-heading-and-distance angle 1) [
     report counter-clockwise
   ] [
     report angle

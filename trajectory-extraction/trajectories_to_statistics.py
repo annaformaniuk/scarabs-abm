@@ -9,16 +9,13 @@ import math
 def calculate_stats(pts, times, scale, displacement_vectors):
     # first calculate the total length of the trajectory
     apts = np.array(pts) # Make it a numpy array
-    print(apts)
     lengths = np.sqrt(np.sum(np.diff(apts, axis=0)**2, axis=1)) # Length between corners
-    real_lengths = lengths * scale
+    real_lengths = lengths * scale # in cm
     real_total_length = np.sum(real_lengths)
-    # real_total_length = total_length  * scale # in cm
     print('real length of trajectory', real_total_length, 'cm')
 
     # now the total duration
     times_array = np.array(times)
-    print(times_array)
     time_diffs = times_array[1:] - times_array[:-1]
     time_length = np.sum(time_diffs) # in seconds
     print('duration of trajectory', time_length, 'seconds')
@@ -33,10 +30,29 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     displacement_vectors_ar = np.array(displacement_vectors)
 
     def heading(row):
-        return math.atan2(row[1], row[0])*180/math.pi
+        angle = math.atan2(row[1], row[0])*180/math.pi
+        # angles should be between 0 and 360
+        if (angle < 0):
+            angle = angle + 360
+        return angle
 
     headings = np.apply_along_axis(heading, 1, displacement_vectors_ar)
+    headings = np.delete(headings, 0)
     print('headings total', headings)
+
+    # find what heading the beetle chose (10 ?)
+    first_headings = headings[:5]
+    default_heading = np.average(first_headings)
+    print('default heading', default_heading)
+    # TODO handle circularity
+
+    # Calculate deviations
+    heading_deviations = np.subtract(headings, [default_heading]).astype(int)
+    print('heading_deviations', heading_deviations)
+    # same bins as in netlogo
+    bins = np.arange(-360, 361, 30)
+    histogram = np.histogram(heading_deviations, bins=bins)
+    print('histogram', histogram)
 
     return real_total_length, time_length, average_speed
 

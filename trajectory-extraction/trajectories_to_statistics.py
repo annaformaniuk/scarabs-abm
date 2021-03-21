@@ -17,13 +17,14 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 
     # now the total duration
     times_array = np.array(times)
+    times_array[0] = 0
     time_diffs = times_array[1:] - times_array[:-1]
     time_length = np.sum(time_diffs) # in seconds
     print('duration of trajectory', time_length, 'seconds')
 
     # and the speeds
     speeds = np.divide(real_lengths, time_diffs)
-    print('all speeds during the trajectory, cm/second', speeds)
+    # print('all speeds during the trajectory, cm/second', speeds)
     average_speed = np.average(speeds)
     print('average speed, cm/second', average_speed)
 
@@ -39,7 +40,7 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 
     headings = np.apply_along_axis(heading, 1, displacement_vectors_ar)
     headings = np.delete(headings, 0)
-    print('headings total', headings)
+    # print('headings total', headings)
 
     # find what heading the beetle chose (10 ?)
     first_headings = headings[:5]
@@ -50,7 +51,7 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 
     # Calculate deviations
     heading_deviations = np.subtract(headings, [default_heading]).astype(int)
-    print('heading_deviations', heading_deviations)
+    # print('heading_deviations', heading_deviations)
     # same bins as in netlogo
     bins = np.arange(-360, 361, 30)
     histogram = np.histogram(heading_deviations, bins=bins)
@@ -76,12 +77,15 @@ if __name__ == '__main__':
 
     while i < len(trajectories):
         with open(args["input_folder"] + "/" + trajectories[i]) as json_file:
+            print('reading file', trajectories[i])
             data = json.load(json_file)
             trajectory_list = []
             times_list = []
             displacement_vectors = []
             ball_pixelsize = data['properties'][0]['ball_pixelsize']
             ball_realsize = data['properties'][0]['ball_realsize']
+            fps = data['properties'][0]['fps']
+            print(fps)
             scale = ball_realsize / ball_pixelsize
             print('scale', scale)
 
@@ -91,7 +95,7 @@ if __name__ == '__main__':
                 if (point['frame_number'] == 1):
                     times_list.append(0)
                 else:
-                    times_list.append(point['frame_number'] / 31)
+                    times_list.append(point['frame_number'] / fps)
 
             something = calculate_stats(trajectory_list, times_list, scale, displacement_vectors)
 

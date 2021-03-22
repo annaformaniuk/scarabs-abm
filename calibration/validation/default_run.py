@@ -80,8 +80,8 @@ if __name__ == '__main__':
     netlogo.load_model(modelfile)
     input_value, results = run_simulation(None, True)
     result_json = {
-        'speeds': results['mean_speeds'],
-        'stds': results['std_speeds'],
+        'mean_speeds': results['mean_speeds'],
+        'std_speeds': results['std_speeds'],
         'heading_deviations': list(results['heading_deviations']),
         'chisq': results['chisquare'][0],
         'p': results['chisquare'][1],

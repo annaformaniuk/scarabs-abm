@@ -57,6 +57,8 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     # return real_total_length, time_length, average_speed
     return speeds, real_total_length, time_length, histogram[0]
 
+def rmse(predictions, targets):
+    return np.sqrt(((predictions - targets) ** 2).mean())
 
 if __name__ == '__main__':
     # construct the argument parser and parse the arguments
@@ -84,11 +86,7 @@ if __name__ == '__main__':
             'speed_means': [],
             'speed_stds': [],
             'distances': [],
-            'distances_means': [],
-            'distances_stds': [],
             'durations': [],
-            'durations_means': [],
-            'durations_stds': [],
             'headings': []
         }
 
@@ -127,11 +125,6 @@ if __name__ == '__main__':
 
                 traj_full_stats['speed_means'].append(np.mean(speeds))
                 traj_full_stats['speed_stds'].append(np.std(speeds))
-                # traj_full_stats['distances_means'].append(np.mean(real_total_length))
-                # traj_full_stats['distances_stds'].append((np.std(real_total_length))
-                # traj_full_stats['durations_means'].append(np.mean(time_length))
-                # traj_full_stats['durations_stds'].append((np.std(time_length))
-                
 
             i += 1
 
@@ -155,4 +148,27 @@ if __name__ == '__main__':
         print('here come the model stats', model_stats)
         print('and here come the real stats', traj_stats)
 
-        # TODO validation formula
+        # validating each result separately
+        rmse_mean_speeds = rmse(np.array(model_stats['mean_speeds']), np.array(traj_stats['mean_speeds']))
+        print("rms error for mean_speed is: " + str(rmse_mean_speeds))
+
+        rmse_std_speeds = rmse(np.array(model_stats['std_speeds']), np.array(traj_stats['std_speeds']))
+        print("rms error for std_speeds is: " + str(rmse_std_speeds))
+
+        rmse_mean_dist = rmse(np.array(model_stats['mean_dist']), np.array(traj_stats['mean_dist']))
+        print("rms error for mean_distis: " + str(rmse_mean_dist))
+
+        rmse_std_dist = rmse(np.array(model_stats['std_dist']), np.array(traj_stats['std_dist']))
+        print("rms error for std_dist is: " + str(rmse_std_dist))
+
+        rmse_mean_time = rmse(np.array(model_stats['mean_time']), np.array(traj_stats['mean_time']))
+        print("rms error for mean_timeis: " + str(rmse_mean_time))
+
+        rmse_std_time = rmse(np.array(model_stats['std_time']), np.array(traj_stats['std_time']))
+        print("rms error for std_timeis: " + str(rmse_std_time))
+
+        rmse_chisq = rmse(np.array(model_stats['chisq']), np.array(traj_stats['chisq']))
+        print("rms error for chisqis: " + str(rmse_chisq))
+
+        rmse_p = rmse(np.array(model_stats['p']), np.array(traj_stats['p']))
+        print("rms error for p is: " + str(rmse_p))

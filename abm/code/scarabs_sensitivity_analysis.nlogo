@@ -108,10 +108,10 @@ to setup
   set total-mean-speed 0
   set total-distances-walked []
   set total-durations-walked []
-  set initial-dance-threshold 5
-  set deviation-dance-probability 5
+  set initial-dance-threshold 6
+  set deviation-dance-probability 8
   set free-dance-probability 5
-  set obstacle-dance-probability 5
+  set obstacle-dance-probability 10
   set average-headings []
 end
 

@@ -108,7 +108,7 @@ to setup
   set total-mean-speed 0
   set total-distances-walked []
   set total-durations-walked []
-  set initial-dance-threshold 5
+  set initial-dance-threshold
   set deviation-dance-probability 5
   set free-dance-probability 5
   set obstacle-dance-probability 5
@@ -620,6 +620,9 @@ to-report find-secondary-heading [#initial-heading]
       ;report #initial-heading
      ]
 
+  ]
+  if found-heading = false [
+    report #initial-heading - 180
   ]
 end
 

@@ -49,6 +49,11 @@ def run_simulation(experiment, default=False):
     # headings preparation
     last_state_headings = counts['average-headings'].iloc[-1]
 
+    print(last_state_headings)
+
+    headings_int =  last_state_headings.astype(int)
+    print(headings_int)
+
     # distance-time preparation
     last_state_dist = counts['total-distances-walked'].iloc[-1]
     last_state_time = counts['total-durations-walked'].iloc[-1]
@@ -61,7 +66,7 @@ def run_simulation(experiment, default=False):
         'std_dist': np.std(last_state_dist),
         'mean_time': last_state_time.mean(),
         'std_time': np.std(last_state_time),
-        'heading_deviations': last_state_headings
+        'heading_deviations': headings_int.tolist()
     }
 
     print("sending", save_value, result)
@@ -82,7 +87,7 @@ if __name__ == '__main__':
     result_json = {
         'mean_speeds': results['mean_speeds'],
         'std_speeds': results['std_speeds'],
-        'heading_deviations': list(results['heading_deviations']),
+        'heading_deviations': results['heading_deviations'],
         'chisq': results['chisquare'][0],
         'p': results['chisquare'][1],
         'mean_dist': results['mean_dist'],

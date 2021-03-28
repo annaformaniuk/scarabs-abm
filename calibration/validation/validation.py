@@ -242,25 +242,51 @@ if __name__ == '__main__':
         # print('trajectory stats for normalization are', all_values)
 
         # validating each result separately
-        rmse_mean_speeds = rmse(np.array(model_stats['mean_speeds']/all_values['mean_speeds']), np.array(
+        rmse_mean_speeds_norm = rmse(np.array(model_stats['mean_speeds']/all_values['mean_speeds']), np.array(
             traj_stats['mean_speeds']/all_values['mean_speeds']))
-        print("rms error for mean_speed is: " + str(rmse_mean_speeds))
+        print("rms error for normalized mean_speed is: " + str(rmse_mean_speeds_norm))
 
-        rmse_std_speeds = rmse(np.array(model_stats['std_speeds']/all_values['mean_speed_stds']), np.array(
+        rmse_mean_speeds = rmse(np.array(model_stats['mean_speeds']), np.array(
+            traj_stats['mean_speeds']))
+        print("rms error for real valies mean_speed is: " + str(rmse_mean_speeds))
+
+        rmse_std_speeds_norm = rmse(np.array(model_stats['std_speeds']/all_values['mean_speed_stds']), np.array(
             traj_stats['std_speeds']/all_values['mean_speed_stds']))
-        print("rms error for std_speeds is: " + str(rmse_std_speeds))
+        print("rms error for normalized std_speeds is: " + str(rmse_std_speeds_norm))
 
-        rmse_mean_dist = rmse(np.array(model_stats['mean_dist']/all_values['mean_dist']), np.array(
+        rmse_std_speeds = rmse(np.array(model_stats['std_speeds']), np.array(
+            traj_stats['std_speeds']))
+        print("rms error for real values std_speeds is: " + str(rmse_std_speeds))
+
+        rmse_mean_dist_norm = rmse(np.array(model_stats['mean_dist']/all_values['mean_dist']), np.array(
             traj_stats['mean_dist']/all_values['mean_dist']))
-        print("rms error for mean_dist is: " + str(rmse_mean_dist))
+        print("rms error for normalized mean_dist is: " + str(rmse_mean_dist_norm))
+
+        rmse_mean_dist = rmse(np.array(model_stats['mean_dist']), np.array(
+            traj_stats['mean_dist']))
+        print("rms error for real values mean_dist is: " + str(rmse_mean_dist))
+
+        # TODO
+        rmse_std_dist_norm = rmse(
+            np.array(model_stats['std_dist']), np.array(traj_stats['std_dist']))
+        print("rms error for normalized std_dist is: " + str(rmse_std_dist_norm))
 
         rmse_std_dist = rmse(
             np.array(model_stats['std_dist']), np.array(traj_stats['std_dist']))
-        print("rms error for std_dist is: " + str(rmse_std_dist))
+        print("rms error for real values std_dist is: " + str(rmse_std_dist))
 
-        rmse_mean_time = rmse(np.array(model_stats['mean_time']/all_values['mean_time']), np.array(
+        rmse_mean_time_norm = rmse(np.array(model_stats['mean_time']/all_values['mean_time']), np.array(
             traj_stats['mean_time']/all_values['mean_time']))
+        print("rms error for mean_time is: " + str(rmse_mean_time_norm))
+
+        rmse_mean_time = rmse(np.array(model_stats['mean_time']), np.array(
+            traj_stats['mean_time']))
         print("rms error for mean_time is: " + str(rmse_mean_time))
+
+        # TODO
+        rmse_std_time_norm = rmse(
+            np.array(model_stats['std_time']), np.array(traj_stats['std_time']))
+        print("rms error for std_time is: " + str(rmse_std_time_norm))
 
         rmse_std_time = rmse(
             np.array(model_stats['std_time']), np.array(traj_stats['std_time']))

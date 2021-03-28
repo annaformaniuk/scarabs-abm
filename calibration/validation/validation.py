@@ -80,13 +80,17 @@ if __name__ == '__main__':
     with open(args["model_stats"]) as json_file:
         print('reading file', args["model_stats"])
         model_stats = json.load(json_file)
-        print('original headings list', type(model_stats['heading_deviations']), model_stats['heading_deviations'])
+        print('original headings list', type(
+            model_stats['heading_deviations']), model_stats['heading_deviations'])
         model_heading_deviations = np.array(model_stats['heading_deviations'])
         print('original headings', model_heading_deviations)
-        model_stats['heading_deviations_norm'] = (model_heading_deviations / np.sum(model_heading_deviations))*100
+        model_stats['heading_deviations_norm'] = (
+            model_heading_deviations / np.sum(model_heading_deviations))*100
         print('normed deviations', model_stats['heading_deviations_norm'])
-        model_stats['chisq_new'] = chisquare(model_stats['heading_deviations_norm'])[0]
-        model_stats['p_new'] = chisquare(model_stats['heading_deviations_norm'])[1]
+        model_stats['chisq_new'] = chisquare(
+            model_stats['heading_deviations_norm'])[0]
+        model_stats['p_new'] = chisquare(
+            model_stats['heading_deviations_norm'])[1]
 
         traj_stats = None
         folder_items = os.listdir(args["input_trajectories"])
@@ -137,8 +141,8 @@ if __name__ == '__main__':
 
                 speeds, real_total_length, time_length, heading_deviations = calculate_stats(
                     trajectory_list, times_list, scale, displacement_vectors)
-                
-                speeds_temp =  all_values['speeds']
+
+                speeds_temp = all_values['speeds']
                 if (len(speeds_temp) == 0):
                     speeds_temp = speeds
                 else:
@@ -200,7 +204,7 @@ if __name__ == '__main__':
                 traj_full_stats['speed_means'].append(np.mean(speeds))
                 traj_full_stats['speed_stds'].append(np.std(speeds))
 
-                speeds_temp =  all_values['speeds']
+                speeds_temp = all_values['speeds']
                 np.concatenate([np.array(speeds_temp), np.array(speeds)])
 
                 all_values['speeds'] = speeds_temp
@@ -231,7 +235,7 @@ if __name__ == '__main__':
                 'p': chisquare(average_his_norm)[1]
             }
 
-        # now compute means for normalization 
+        # now compute means for normalization
         all_values['mean_speeds'] = np.mean(np.array(all_values['speeds']))
         all_values['mean_speed_stds'] = np.mean(all_values['speed_stds'])
         all_values['mean_dist'] = np.mean(all_values['distances'])
@@ -244,15 +248,18 @@ if __name__ == '__main__':
         # validating each result separately
         rmse_mean_speeds_norm = rmse(np.array(model_stats['mean_speeds']/all_values['mean_speeds']), np.array(
             traj_stats['mean_speeds']/all_values['mean_speeds']))
-        print("rms error for normalized mean_speed is: " + str(rmse_mean_speeds_norm))
+        print("rms error for normalized mean_speed is: " +
+              str(rmse_mean_speeds_norm))
 
         rmse_mean_speeds = rmse(np.array(model_stats['mean_speeds']), np.array(
             traj_stats['mean_speeds']))
         print("rms error for real valies mean_speed is: " + str(rmse_mean_speeds))
 
-        rmse_std_speeds_norm = rmse(np.array(model_stats['std_speeds']/all_values['mean_speed_stds']), np.array(
-            traj_stats['std_speeds']/all_values['mean_speed_stds']))
-        print("rms error for normalized std_speeds is: " + str(rmse_std_speeds_norm))
+        # Normalizing stds by the mean value
+        rmse_std_speeds_norm = rmse(np.array(model_stats['std_speeds']/all_values['mean_speeds']), np.array(
+            traj_stats['std_speeds']/all_values['mean_speeds']))
+        print("rms error for normalized std_speeds is: " +
+              str(rmse_std_speeds_norm))
 
         rmse_std_speeds = rmse(np.array(model_stats['std_speeds']), np.array(
             traj_stats['std_speeds']))
@@ -266,9 +273,8 @@ if __name__ == '__main__':
             traj_stats['mean_dist']))
         print("rms error for real values mean_dist is: " + str(rmse_mean_dist))
 
-        # TODO
         rmse_std_dist_norm = rmse(
-            np.array(model_stats['std_dist']), np.array(traj_stats['std_dist']))
+            np.array(model_stats['std_dist']/all_values['mean_dist']), np.array(traj_stats['std_dist']/all_values['mean_dist']))
         print("rms error for normalized std_dist is: " + str(rmse_std_dist_norm))
 
         rmse_std_dist = rmse(
@@ -277,24 +283,27 @@ if __name__ == '__main__':
 
         rmse_mean_time_norm = rmse(np.array(model_stats['mean_time']/all_values['mean_time']), np.array(
             traj_stats['mean_time']/all_values['mean_time']))
-        print("rms error for mean_time is: " + str(rmse_mean_time_norm))
+        print("rms error for normalized mean_time is: " + str(rmse_mean_time_norm))
 
         rmse_mean_time = rmse(np.array(model_stats['mean_time']), np.array(
             traj_stats['mean_time']))
-        print("rms error for mean_time is: " + str(rmse_mean_time))
+        print("rms error for real values mean_time is: " + str(rmse_mean_time))
 
-        # TODO
         rmse_std_time_norm = rmse(
-            np.array(model_stats['std_time']), np.array(traj_stats['std_time']))
-        print("rms error for std_time is: " + str(rmse_std_time_norm))
+            np.array(model_stats['std_time']/all_values['mean_time']), np.array(traj_stats['std_time']/all_values['mean_time']))
+        print("rms error for normalized std_time is: " + str(rmse_std_time_norm))
 
         rmse_std_time = rmse(
             np.array(model_stats['std_time']), np.array(traj_stats['std_time']))
-        print("rms error for std_time is: " + str(rmse_std_time))
+        print("rms error for real values std_time is: " + str(rmse_std_time))
 
-        rmse_chisq = rmse(
+        rmse_chisq_norm = rmse(
+            np.array(model_stats['chisq_new']/traj_stats['chisq']), np.array(traj_stats['chisq']/traj_stats['chisq']))
+        print("rms error for normalized chisqis: " + str(rmse_chisq_norm))
+
+        rmse_chisq=rmse(
             np.array(model_stats['chisq_new']), np.array(traj_stats['chisq']))
-        print("rms error for chisqis: " + str(rmse_chisq))
+        print("rms error for real values chisqis: " + str(rmse_chisq))
 
-        rmse_p = rmse(np.array(model_stats['p_new']), np.array(traj_stats['p']))
+        rmse_p=rmse(np.array(model_stats['p_new']), np.array(traj_stats['p']))
         print("rms error for p is: " + str(rmse_p))

@@ -245,7 +245,7 @@ to go  ; forever button
     if count beetles with [nested = false and walking = true] > 0 [
       py:set "all_deviations" [ headings-deviation-list ] of beetles
       (py:run
-        "bins = np.arange(-360, 361, 30)"
+        "bins = np.arange(0, 361, 30)"
         "all_histograms = []"
         "#average_hist = []"
         "for deviation in all_deviations:"
@@ -578,7 +578,7 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
     fd step-length
   ]
   let total-deviation #deviation-before + deviation-after
-  set headings-deviation-list lput total-deviation headings-deviation-list
+  set headings-deviation-list lput abs total-deviation headings-deviation-list
 end
 
 to nest
@@ -803,10 +803,10 @@ PLOT
 Heading-deviation
 Deviation angle
 Frequency
--360.0
+0.0
 360.0
 0.0
-500.0
+1000.0
 true
 false
 "" ""

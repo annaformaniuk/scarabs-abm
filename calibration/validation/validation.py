@@ -51,7 +51,7 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     # Calculate deviations
     heading_deviations = np.subtract(headings, [default_heading]).astype(int)
     # same bins as in netlogo
-    bins = np.arange(-360, 361, 30)
+    bins = np.arange(0, 361, 30)
     histogram = np.histogram(heading_deviations, bins=bins)
     print('histogram', histogram[0])
 
@@ -231,6 +231,8 @@ if __name__ == '__main__':
                 'std_dist': np.std(traj_full_stats['distances']),
                 'mean_time': np.mean(traj_full_stats['durations']),
                 'std_time': np.std(traj_full_stats['durations']),
+                'heading_deviations': average_hist,
+                'heading_deviations_norm': average_his_norm,
                 'chisq': chisquare(average_his_norm)[0],
                 'p': chisquare(average_his_norm)[1]
             }

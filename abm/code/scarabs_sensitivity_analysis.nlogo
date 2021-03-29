@@ -28,7 +28,8 @@ globals [
   free-dance-probability
   obstacle-dance-probability
   average-headings
-
+  total-beetles
+  protonum-scale
 ]
 
 breed [beetles beetle]
@@ -113,6 +114,8 @@ to setup
   set free-dance-probability 5
   set obstacle-dance-probability 10
   set average-headings []
+  set total-beetles 0
+  set protonum-scale 0.35
 end
 
 to setup-patches
@@ -141,12 +144,12 @@ to setup-terrain
 end
 
 to setup-obstacles
-  random-seed 2021
+  random-seed 42
   repeat 42 [
-    let random-x random-in-range -230 230
-    let random-y random-in-range -230 230
-    let random-width random-in-range 2 12
-    let random-height random-in-range 2 12
+    let random-x random-in-range min-pxcor max-pxcor
+    let random-y random-in-range min-pycor max-pycor
+    let random-width random-in-range 2 6
+    let random-height random-in-range 2 6
     rectanglebase random-x random-y random-width random-height black
   ]
 end
@@ -161,7 +164,6 @@ end
 
 to create-beetle ; beetle setup
   create-beetles 1 [
-    set size 10 ; size on the map
     set has-ball? false
     set color violet
     set ball-shaping-counter 0
@@ -172,6 +174,7 @@ to create-beetle ; beetle setup
     set walked-distance 0
     set course-deviation 0
     set pronotum-width ((random-in-range 10 21) / 10) ; to cm
+    set size (pronotum-width * 3) ; size on the map enlarged for visibility
     set heading-deviation-degrees 0
     set starting-tick ticks
     set speeds-list []
@@ -180,14 +183,15 @@ to create-beetle ; beetle setup
     set spatial-awareness random-in-range 1 10
     set current-obstacle-danced false
     set dances-count 0
-    set visible-beetles-radius random-in-range 20 30
-    set memory-level-threshold random-in-range 1000 2000
+    set visible-beetles-radius random-in-range 5 10
+    set memory-level-threshold random-in-range 1800 2000
     set memory-level 0
     set ball-rolling-duration 0
-    set minimum-dist-from-source random-in-range 80 100 ; in patches
-    set minimum-last-encounter-time random-in-range 25 35 ; in ticks
+    set minimum-dist-from-source random-in-range 30 32 ; in patches
+    set minimum-last-encounter-time random-in-range 3 6 ; in ticks
     set walking false
   ]
+  set total-beetles total-beetles + 1
 end
 
 ;;;;;;;;;;;;;;;;;;;;;
@@ -207,7 +211,7 @@ to go  ; forever button
 
   ; add beetles one at a time if there's 3 or less at the source
   if (count beetles < beetles-number) and (beetles-at-source <= 2) [
-    if random 75 < 1 [
+    if random 30 < 1 [
         create-beetle
       ]
     ]
@@ -286,7 +290,7 @@ to update-heading-plot
     create-temporary-plot-pen temp_string
     set-current-plot-pen temp_string
     set-plot-pen-mode 1
-    set-plot-y-range 0 500
+    ;set-plot-y-range 0 500
     set-plot-pen-interval 30
     set-plot-pen-color who
     histogram headings-deviation-list
@@ -307,10 +311,10 @@ to roll-ball
       let rolling-temp ball-rolling-duration
       hatch-balls 1 [
         set color magenta
-        set size 5
+        set size 2
         set ball-who who
         set temp who
-        set ball-roughness (1 - (rolling-temp / 60))
+        set ball-roughness (1 - (rolling-temp / 66))
       ]
       set has-ball? true
       set ball-id temp
@@ -558,7 +562,7 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
   ask balls with [ball-who = beetles-ball] [
     set this-ball-roughness ball-roughness
   ]
-  let step-length pronotum-width * protonum-width-impact
+  let step-length pronotum-width * protonum-width-impact * protonum-scale
   let heading-adjusted (check-roughness #some-heading)
   set heading-adjusted heading-adjusted + (random-prefix * 10 * this-ball-roughness * ball-roughness-impact)
   let deviation-after heading-adjusted - #some-heading
@@ -570,7 +574,7 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
   ]
   fd step-length
   set walked-distance walked-distance + (step-length * patch-length)
-  set current-speed (step-length / tick-duration) * 10
+  set current-speed ((step-length * patch-length) / tick-duration)
   set speeds-list lput current-speed speeds-list
   set average-speed mean speeds-list
 
@@ -636,7 +640,7 @@ to-report random-in-range [#low #high] ; random integer in given range
 end
 
 to-report source? ; patch reporter
-  report distancexy 0 0 < 7
+  report distancexy 0 0 < 4
 end
 
 to-report obstacle? [angle]  ; turtle procedure to see if patch ahead at some angle is an obstacle
@@ -667,24 +671,24 @@ end
 GRAPHICS-WINDOW
 587
 30
-1096
-540
+1090
+534
 -1
 -1
-1.0
+2.463
 1
 10
 1
 1
 1
 0
+0
+0
 1
-1
-1
--250
-250
--250
-250
+-100
+100
+-100
+100
 1
 1
 1
@@ -746,7 +750,7 @@ PLOT
 239
 366
 Cumulative average speed
-NIL
+Ticks
 Centimeters per second
 0.0
 15.0
@@ -764,7 +768,7 @@ PLOT
 26
 382
 241
-547
+595
 Heading-degrees
 Angle
 Frequency
@@ -800,14 +804,14 @@ PLOT
 287
 383
 517
-545
+596
 Heading-deviation
 Deviation angle
 Frequency
 0.0
 360.0
 0.0
-1000.0
+100.0
 true
 false
 "" ""
@@ -867,7 +871,7 @@ patch-roughness-impact
 patch-roughness-impact
 0
 10
-1.0
+2.3
 0.1
 1
 NIL
@@ -881,9 +885,9 @@ SLIDER
 protonum-width-impact
 protonum-width-impact
 0
-10
-0.35
-0.1
+3
+1.0
+0.05
 1
 NIL
 HORIZONTAL
@@ -1057,6 +1061,17 @@ PENS
 "default" 1.0 0 -8630108 true "" "if count beetles > 0 [plot max [dances-count] of beetles]"
 "pen-1" 1.0 0 -16777216 true "" "if count beetles > 0 [plot mean [dances-count] of beetles]"
 "pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
+
+MONITOR
+8
+105
+127
+150
+Beetles on the map
+total-beetles
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?

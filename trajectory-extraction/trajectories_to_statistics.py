@@ -53,7 +53,7 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     heading_deviations = np.subtract(headings, [default_heading]).astype(int)
     # print('heading_deviations', heading_deviations)
     # same bins as in netlogo
-    bins = np.arange(-360, 361, 30)
+    bins = np.arange(0, 361, 30)
     histogram = np.histogram(heading_deviations, bins=bins)
     print('histogram', histogram)
     histogram_stats = chisquare(histogram[0])

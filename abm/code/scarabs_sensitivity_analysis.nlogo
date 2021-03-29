@@ -389,7 +389,8 @@ to establish-heading
 end
 
 to wander  ;; turtle procedure
-  ifelse xcor = max-pxcor or xcor = min-pxcor or ycor = max-pycor or ycor = min-pycor [
+  ; 5 patches buffer around the world
+  ifelse (abs xcor) > ((abs max-pxcor) - 5) or (abs xcor) > ((abs min-pxcor) - 5) or (abs ycor) > ((abs max-pycor) - 5) or (abs ycor) > ((abs min-pycor) - 5) [
     ; nest if end of the world
     nest
   ] [

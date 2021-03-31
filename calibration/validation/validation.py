@@ -222,7 +222,7 @@ if __name__ == '__main__':
             average_his_norm = np.mean(
                 traj_full_stats['norm_headings'], axis=0)
 
-            print('just average_his_norm', average_his_norm)
+            print('just average_hist_norm', average_his_norm)
 
             traj_stats = {
                 'mean_speeds': np.mean(traj_full_stats['speed_means']),

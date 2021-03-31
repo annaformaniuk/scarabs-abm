@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from multiprocessing import Pool
 from scipy.stats import chisquare
 import json
+import itertools
 
 import pyNetLogo
 

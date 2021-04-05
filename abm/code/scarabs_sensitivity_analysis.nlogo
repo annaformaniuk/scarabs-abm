@@ -176,7 +176,6 @@ to create-beetle ; beetle setup
     set pronotum-width ((random-in-range 10 21) / 10) ; to cm
     set size (pronotum-width * 3) ; size on the map enlarged for visibility
     set heading-deviation-degrees 0
-    set starting-tick ticks
     set speeds-list []
     set headings-deviation-list []
     set max-deviation random-in-range 20 40
@@ -335,6 +334,7 @@ to establish-heading
       set memory-level 0
     ]
     set initial-dance-total initial-dance-total + 1
+    set starting-tick ticks
     let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
 
     ifelse count visible-beetles >= 1 [

@@ -120,8 +120,8 @@ end
 
 to setup-patches
   setup-terrain
-  setup-source
   setup-obstacles
+  setup-source
 end
 
 to setup-source
@@ -221,9 +221,9 @@ to go  ; forever button
       ifelse not has-ball? [
         ifelse ball-rolling-duration = 0 [
           let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
-          set ball-rolling-duration 60 - ((count visible-beetles) * 3)
-          if ball-rolling-duration < 30 [
-          set ball-rolling-duration 30]
+          set ball-rolling-duration 540 - ((count visible-beetles) * 30)
+          if ball-rolling-duration < 240 [
+          set ball-rolling-duration 240]
       ] [
           roll-ball
       ] ] [
@@ -299,8 +299,15 @@ end
 
 to roll-ball
   ifelse ball-shaping-counter < ball-rolling-duration [
-    if pcolor = red [
+    show "pew"
+    show pcolor
+    ifelse pcolor = red [
+      show "pew pew"
       set heading random 360
+      fd 1
+    ] [
+      show "reverse pew pew"
+      facexy 0 0
       fd 1
     ]
     set ball-shaping-counter ball-shaping-counter + 1
@@ -313,7 +320,7 @@ to roll-ball
         set size 2
         set ball-who who
         set temp who
-        set ball-roughness (1 - (rolling-temp / 66))
+        set ball-roughness (1 - (rolling-temp / 660))
       ]
       set has-ball? true
       set ball-id temp

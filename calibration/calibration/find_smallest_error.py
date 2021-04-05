@@ -6,7 +6,7 @@ import math
 import statistics
 from scipy.stats import chisquare
 
-# python find_smallest_error.py -model_stats_folder "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\2000_6" -validation_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\validation" -calibration_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\training"
+# python find_smallest_error.py -model_stats_folder "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\calibration\outputs" -validation_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\validation" -calibration_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\training"
 
 
 def calculate_stats(pts, times, scale, displacement_vectors):
@@ -90,6 +90,7 @@ if __name__ == '__main__':
         # first reading the model statistics
         with open(args["model_stats_folder"] + "/" + model_stats[i]) as json_file:
             model = json.load(json_file)
+            model['chisq'] = chisquare(model['heading_deviations_norm'])[0]
             model_stats_dicts.append(model)
         i += 1
 
@@ -113,7 +114,9 @@ if __name__ == '__main__':
         'distances': [],
         'distances_stds': [],
         'durations': [],
-        'durations_stds': []
+        'durations_stds': [],
+        'headings': [],
+        'norm_headings': []
     }
 
     while i < len(validation_trajectories):
@@ -149,6 +152,10 @@ if __name__ == '__main__':
             all_values['speed_stds'].append(np.std(speeds))
             all_values['distances'].append(real_total_length)
             all_values['durations'].append(time_length)
+            all_values['headings'].append(
+                    heading_deviations)
+            all_values['norm_headings'].append(
+                    (heading_deviations / np.sum(heading_deviations))*100)
 
         i += 1
 
@@ -208,6 +215,11 @@ if __name__ == '__main__':
                 all_values['speed_stds'].append(np.std(speeds))
                 all_values['distances'].append(real_total_length)
                 all_values['durations'].append(time_length)
+                all_values['headings'].append(
+                    heading_deviations)
+                all_values['norm_headings'].append(
+                        (heading_deviations / np.sum(heading_deviations))*100)
+
 
             i += 1
 
@@ -216,10 +228,10 @@ if __name__ == '__main__':
 
             # print('just average hist', average_hist)
 
-            average_his_norm = np.mean(
+            average_hist_norm = np.mean(
                 calibration_full_stats['norm_headings'], axis=0)
 
-            # print('just average_hist_norm', average_his_norm)
+            # print('just average_hist_norm', average_hist_norm)
 
             calibration_stats = {
                 'mean_speeds': np.mean(calibration_full_stats['speed_means']),
@@ -229,16 +241,21 @@ if __name__ == '__main__':
                 'mean_time': np.mean(calibration_full_stats['durations']),
                 'std_time': np.std(calibration_full_stats['durations']),
                 'heading_deviations': average_hist,
-                'heading_deviations_norm': average_his_norm,
-                'chisq': chisquare(average_his_norm)[0],
-                'p': chisquare(average_his_norm)[1]
+                'heading_deviations_norm': average_hist_norm,
+                'chisq': chisquare(average_hist_norm)[0],
+                'p': chisquare(average_hist_norm)[1]
             }
 
     # now compute means for normalization
+    average_hist_all_norm = np.mean(
+        all_values['norm_headings'], axis=0)
+
     all_values['mean_speeds'] = np.mean(np.array(all_values['speeds']))
     all_values['mean_speed_stds'] = np.mean(all_values['speed_stds'])
     all_values['mean_dist'] = np.mean(all_values['distances'])
     all_values['mean_time'] = np.mean(all_values['durations'])
+    all_values['chisq'] = chisquare(average_hist_all_norm)[0]
+    all_values['p'] = chisquare(average_hist_all_norm)[1]
 
     # print('here come the model stats', model_stats)
     # print('and here come the real stats', calibration_stats)
@@ -251,9 +268,9 @@ if __name__ == '__main__':
             model_stats['mean_dist']/all_values['mean_dist'],
             model_stats['std_dist']/all_values['mean_dist'],
             model_stats['mean_time']/all_values['mean_time'],
-            model_stats['std_time']/all_values['mean_time']
+            model_stats['std_time']/all_values['mean_time'],
+            model_stats['chisq']/all_values['chisq']
         ]
-            # model_stats['chisq_new']/traj_stats['chisq']
         )
         trajectories_norm_values = np.array([
             calibration_stats['mean_speeds']/all_values['mean_speeds'],
@@ -261,8 +278,8 @@ if __name__ == '__main__':
             calibration_stats['mean_dist']/all_values['mean_dist'],
             calibration_stats['std_dist']/all_values['mean_dist'],
             calibration_stats['mean_time']/all_values['mean_time'],
-            calibration_stats['std_time']/all_values['mean_time']
-            # calibration_stats['chisq_new']/traj_stats['chisq']
+            calibration_stats['std_time']/all_values['mean_time'],
+            calibration_stats['chisq']/all_values['chisq']
         ]
         )
 

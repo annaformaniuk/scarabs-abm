@@ -57,7 +57,7 @@ def run_simulation(experiment, default=False):
 
         netlogo.command('setup')
 
-    # Run for 1000 ticks and return the number of beetles and their mean speeds
+    # Run for 2000 ticks and return the number of beetles and their mean speeds
 
     counts = netlogo.repeat_report(
         ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked'], 2000)
@@ -69,13 +69,17 @@ def run_simulation(experiment, default=False):
 
     # headings preparation
     last_state_headings = counts['average-headings'].iloc[-1]
+    last_state_headings_list = last_state_headings.tolist()
+
+    last_state_headings_norm_list = ((last_state_headings / np.sum(last_state_headings))*100).tolist()
 
     # distance-time preparation
     last_state_dist = counts['total-distances-walked'].iloc[-1]
     last_state_time = counts['total-durations-walked'].iloc[-1]
 
     result = {
-        'chisquare': chisquare(last_state_headings),
+        'heading_deviations': last_state_headings_list,
+        'heading_deviations_norm': last_state_headings_norm_list,
         'mean_speeds': trimmed.mean(),
         'std_speeds': np.std(trimmed),
         'mean_dist': last_state_dist.mean(),
@@ -94,7 +98,9 @@ if __name__ == '__main__':
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
-    bounds = np.arange(1.0, 2.6, 0.5)  # individual ?
+    # bounds = np.arange(0.1, 2.6, 0.5)  # individual ?
+    bounds = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
+    # first_bounds = [2.5]
 
     problem = {
         'names': ['protonum-width-impact', 'ball-roughness-impact', 'patch-roughness-impact', 'seen-radius-impact', 'distance-threshold-impact'],
@@ -124,8 +130,8 @@ if __name__ == '__main__':
                             result_json = {
                                 'mean_speeds': results['mean_speeds'],
                                 'std_speeds': results['std_speeds'],
-                                'chisq': results['chisquare'][0],
-                                'p': results['chisquare'][1],
+                                'heading_deviations': results['heading_deviations'],
+                                'heading_deviations_norm': results['heading_deviations_norm'],
                                 'mean_dist': results['mean_dist'],
                                 'std_dist': results['std_dist'],
                                 'mean_time': results['mean_time'],
@@ -137,7 +143,7 @@ if __name__ == '__main__':
                                 'seen-radius-impact': input_values['seen-radius-impact']
                             }
 
-                            filename = "results_" + str(input_values['protonum-width-impact']) + "_" + str(input_values['ball-roughness-impact']) + "_" + str(
+                            filename = "calibration/outputs/results_" + str(input_values['protonum-width-impact']) + "_" + str(input_values['ball-roughness-impact']) + "_" + str(
                                 input_values['patch-roughness-impact']) + "_" + str(input_values['seen-radius-impact']) + "_" + str(input_values['distance-threshold-impact']) + ".json"
                             with open(filename, 'w') as f:
                                 json.dump(result_json, f)

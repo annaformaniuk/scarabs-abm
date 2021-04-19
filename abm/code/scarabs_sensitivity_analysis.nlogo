@@ -209,7 +209,7 @@ to go  ; forever button
   ]
 
   ; add beetles one at a time if there's 3 or less at the source
-  if (count beetles < beetles-number) and (beetles-at-source <= 2) [
+  if (count beetles < beetles-number) and (beetles-at-source <= beetles-at-pile) [
     if random 30 < 1 [
         create-beetle
       ]
@@ -220,10 +220,10 @@ to go  ; forever button
     ask beetles [
       ifelse not has-ball? [
         ifelse ball-rolling-duration = 0 [
-          let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
+          let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ nested = false ]  ; picking beetles in visible radius
           set ball-rolling-duration 540 - ((count visible-beetles) * 30)
-          if ball-rolling-duration < 240 [
-          set ball-rolling-duration 240]
+          if ball-rolling-duration < 120 [
+          set ball-rolling-duration 120]
       ] [
           roll-ball
       ] ] [
@@ -299,14 +299,10 @@ end
 
 to roll-ball
   ifelse ball-shaping-counter < ball-rolling-duration [
-    show "pew"
-    show pcolor
     ifelse pcolor = red [
-      show "pew pew"
       set heading random 360
       fd 1
     ] [
-      show "reverse pew pew"
       facexy 0 0
       fd 1
     ]
@@ -315,12 +311,16 @@ to roll-ball
     if random 10 < 2 [
       let temp -1
       let rolling-temp ball-rolling-duration
+      show ball-rolling-duration
       hatch-balls 1 [
         set color magenta
         set size 2
         set ball-who who
         set temp who
         set ball-roughness (1 - (rolling-temp / 660))
+
+        show ball-roughness
+        show "done"
       ]
       set has-ball? true
       set ball-id temp
@@ -571,11 +571,11 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
   ]
   let step-length pronotum-width * protonum-width-impact * protonum-scale
   let heading-adjusted (check-roughness #some-heading)
-  set heading-adjusted heading-adjusted + (random-prefix * 10 * this-ball-roughness * ball-roughness-impact)
+  set heading-adjusted heading-adjusted + (random-prefix * 100 * this-ball-roughness * ball-roughness-impact)
   let deviation-after heading-adjusted - #some-heading
   set heading heading-adjusted
   ask patch-ahead 1 [
-    set step-length step-length - (patch-roughness-impact * roughness) - (this-ball-roughness * ball-roughness-impact)
+    set step-length step-length - (patch-roughness-impact * roughness)
     if step-length < 0.1 [
     set step-length 0.1]
   ]
@@ -878,7 +878,7 @@ patch-roughness-impact
 patch-roughness-impact
 0
 10
-2.3
+1.0
 0.1
 1
 NIL
@@ -908,7 +908,7 @@ ball-roughness-impact
 ball-roughness-impact
 0
 10
-1.0
+0.5
 0.1
 1
 NIL
@@ -1079,6 +1079,21 @@ total-beetles
 17
 1
 11
+
+SLIDER
+201
+105
+388
+138
+beetles-at-pile
+beetles-at-pile
+1
+10
+10.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

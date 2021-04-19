@@ -136,7 +136,12 @@ to setup-terrain
   ask patches with-max [pcolor] [set max-pcolor pcolor]
 
   ask patches [
-    set roughness (round ((pcolor / max-pcolor) * 10)) / 20
+     ifelse additional-obstacles [
+      set roughness (round ((pcolor / max-pcolor) * 10)) / 10
+    ] [
+      set roughness (round ((pcolor / max-pcolor) * 10)) / 20
+    ]
+
     set roughness roughness + random-float 0.1
 
     set pcolor scale-color black roughness 1.0 0.0
@@ -145,13 +150,20 @@ end
 
 to setup-obstacles
   random-seed 42
-  repeat 42 [
+  let obstacles-count 0
+  ifelse additional-obstacles [
+    set obstacles-count 84
+  ] [
+    set obstacles-count 42
+  ]
+  repeat obstacles-count [
     let random-x random-in-range min-pxcor max-pxcor
     let random-y random-in-range min-pycor max-pycor
     let random-width random-in-range 2 6
     let random-height random-in-range 2 6
     rectanglebase random-x random-y random-width random-height black
   ]
+
 end
 
 to rectanglebase [x y w l c]
@@ -571,7 +583,7 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
   ]
   let step-length pronotum-width * protonum-width-impact * protonum-scale
   let heading-adjusted (check-roughness #some-heading)
-  set heading-adjusted heading-adjusted + (random-prefix *  * this-ball-roughness * ball-roughness-impact)
+  set heading-adjusted heading-adjusted + (random-prefix * 100 * this-ball-roughness * ball-roughness-impact)
   let deviation-after heading-adjusted - #some-heading
   set heading heading-adjusted
   ask patch-ahead 1 [
@@ -908,7 +920,7 @@ ball-roughness-impact
 ball-roughness-impact
 0
 10
-1.0
+0.5
 0.1
 1
 NIL
@@ -1089,11 +1101,22 @@ beetles-at-pile
 beetles-at-pile
 1
 10
-2.0
+3.0
 1
 1
 NIL
 HORIZONTAL
+
+SWITCH
+401
+106
+566
+139
+additional-obstacles
+additional-obstacles
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -36,11 +36,11 @@ def get_random_color():
 def get_class_color(classname):
     print(classname)
     if (classname == "Ball"):
-        return (200, 0, 0)
+        return (232, 220, 107)
     elif (classname == "Beetle"):
-        return (0, 200, 0)
+        return (136, 232, 107)
     else:
-        return (100, 100, 100)
+        return (180, 180, 180)
 
 
 def from_yolo_to_cor(box, shape):
@@ -129,7 +129,7 @@ while i < len(annotations):
                         val_object["box"][2], val_object["box"][3]), boxcolor, 3)
 
                     text = val_object["label"] + ": " + \
-                        str(val_object["confidence"])
+                        str(int(val_object["confidence"]*100)) + "%"
                     (text_width, text_height) = cv2.getTextSize(
                         text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=font_scale, thickness=thickness)[0]
                     text_offset_x = val_object["box"][0]
@@ -182,7 +182,7 @@ while i < len(annotations):
                     stats["ball_class"]["false_negatives"].append(
                         {"image_name": name_no_ext})
 
-            filename = "classified_images/" + name_no_ext + "_val.png"
+            filename = "classified_images2/" + name_no_ext + "_val.png"
             cv2.imwrite(filename, copyImage)
     i += 1
 

@@ -159,10 +159,13 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     # cv2.imshow('stitching result', test)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    cv2.imwrite(str(frame_index)+'stitched.png', test)
+    cv2.imwrite(str(frame_index)+'stitched_old.png', test)
+    cv2.imwrite(str(frame_index)+'stitched_landscape.png', landscape_dst)
+    cv2.imwrite(str(frame_index)+'stitched_landscape_last.png', ladscapeFront)
 
     new_centroids.append(new_centroid_dst)
     draw_trajectory(dst, new_centroids, frame_index)
+    
 
     return dst, overlay_mask, landscape_dst, new_centroids
 

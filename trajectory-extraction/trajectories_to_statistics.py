@@ -5,7 +5,10 @@ import json
 import math
 from scipy.stats import chisquare
 
-# python trajectories_to_statistics.py -input "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\trajectories" -output "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\trajectories"
+# python trajectories_to_statistics.py -input "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\thesis-vis\todo" 
+# 
+# 
+# -output "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\trajectories"
 
 def calculate_stats(pts, times, scale, displacement_vectors):
     # first calculate the total length of the trajectory
@@ -66,8 +69,8 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-input", "--input_folder", required=True,
                     help="path to input trajectories")
-    ap.add_argument("-output", "--output_folder", required=True,
-                    help="path to output folder where to save the results")
+    # ap.add_argument("-output", "--output_folder", required=False,
+    #                 help="path to output folder where to save the results")
 
     args = vars(ap.parse_args())
 

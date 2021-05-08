@@ -6,7 +6,7 @@ import math
 import statistics
 from scipy.stats import chisquare
 
-# python validation.py -input_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\validation" -model_stats "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\results_default.json" -calibration_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\training"
+# python validation.py -input_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\validation" -model_stats "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\results_best_1.0_2.5_2.5_1.5_0.1.json" -calibration_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\training"
 
 
 def calculate_stats(pts, times, scale, displacement_vectors):
@@ -62,30 +62,18 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 def rmse(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
 
-
-if __name__ == '__main__':
-    # construct the argument parser and parse the arguments
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-input_trajectories", "--input_trajectories", required=True,
-                    help="path to input trajectories")
-    ap.add_argument("-model_stats", "--model_stats", required=True,
-                    help="path to the model output")
-    ap.add_argument("-calibration_trajectories", "--calibration_trajectories", required=True,
-                    help="path to the other trajectories to estimate means")
-
-    args = vars(ap.parse_args())
-    print('args', args)
-
+def validate_stats(args):
     # first reading the model statistics
     with open(args["model_stats"]) as json_file:
         print('reading file', args["model_stats"])
         model_stats = json.load(json_file)
-        print('original headings list', type(
-            model_stats['heading_deviations']), model_stats['heading_deviations'])
-        model_heading_deviations = np.array(model_stats['heading_deviations'])
-        print('original headings', model_heading_deviations)
-        model_stats['heading_deviations_norm'] = (
-            model_heading_deviations / np.sum(model_heading_deviations))*100
+        print(model_stats)
+        # print('original headings list', type(
+        #     model_stats['heading_deviations']), model_stats['heading_deviations'])
+        # model_heading_deviations = np.array(model_stats['heading_deviations'])
+        # print('original headings', model_heading_deviations)
+        # model_stats['heading_deviations_norm'] = (
+        #     model_heading_deviations / np.sum(model_heading_deviations))*100
         print('normed deviations', model_stats['heading_deviations_norm'])
         model_stats['chisq_new'] = chisquare(
             model_stats['heading_deviations_norm'])[0]
@@ -253,59 +241,83 @@ if __name__ == '__main__':
         print("rms error for normalized mean_speed is: " +
               str(rmse_mean_speeds_norm))
 
-        rmse_mean_speeds = rmse(np.array(model_stats['mean_speeds']), np.array(
+        rmse_obj = {
+            'rmse_mean_speeds_norm': rmse_mean_speeds_norm
+        }
+
+        rmse_obj['rmse_mean_speeds'] = rmse(np.array(model_stats['mean_speeds']), np.array(
             traj_stats['mean_speeds']))
-        print("rms error for real valies mean_speed is: " + str(rmse_mean_speeds))
+        print("rms error for real valies mean_speed is: " + str(rmse_obj['rmse_mean_speeds']))
 
         # Normalizing stds by the mean value
-        rmse_std_speeds_norm = rmse(np.array(model_stats['std_speeds']/all_values['mean_speeds']), np.array(
+        rmse_obj['rmse_std_speeds_norm'] = rmse(np.array(model_stats['std_speeds']/all_values['mean_speeds']), np.array(
             traj_stats['std_speeds']/all_values['mean_speeds']))
         print("rms error for normalized std_speeds is: " +
-              str(rmse_std_speeds_norm))
+              str(rmse_obj['rmse_std_speeds_norm']))
 
-        rmse_std_speeds = rmse(np.array(model_stats['std_speeds']), np.array(
+        rmse_obj['rmse_std_speeds'] = rmse(np.array(model_stats['std_speeds']), np.array(
             traj_stats['std_speeds']))
-        print("rms error for real values std_speeds is: " + str(rmse_std_speeds))
+        print("rms error for real values std_speeds is: " + str(rmse_obj['rmse_std_speeds']))
 
-        rmse_mean_dist_norm = rmse(np.array(model_stats['mean_dist']/all_values['mean_dist']), np.array(
+        rmse_obj['rmse_mean_dist_norm'] = rmse(np.array(model_stats['mean_dist']/all_values['mean_dist']), np.array(
             traj_stats['mean_dist']/all_values['mean_dist']))
-        print("rms error for normalized mean_dist is: " + str(rmse_mean_dist_norm))
+        print("rms error for normalized mean_dist is: " + str(rmse_obj['rmse_mean_dist_norm']))
 
-        rmse_mean_dist = rmse(np.array(model_stats['mean_dist']), np.array(
+        rmse_obj['rmse_mean_dist'] = rmse(np.array(model_stats['mean_dist']), np.array(
             traj_stats['mean_dist']))
-        print("rms error for real values mean_dist is: " + str(rmse_mean_dist))
+        print("rms error for real values mean_dist is: " + str(rmse_obj['rmse_mean_dist']))
 
-        rmse_std_dist_norm = rmse(
+        rmse_obj['rmse_std_dist_norm'] = rmse(
             np.array(model_stats['std_dist']/all_values['mean_dist']), np.array(traj_stats['std_dist']/all_values['mean_dist']))
-        print("rms error for normalized std_dist is: " + str(rmse_std_dist_norm))
+        print("rms error for normalized std_dist is: " + str(rmse_obj['rmse_std_dist_norm']))
 
-        rmse_std_dist = rmse(
+        rmse_obj['rmse_std_dist'] = rmse(
             np.array(model_stats['std_dist']), np.array(traj_stats['std_dist']))
-        print("rms error for real values std_dist is: " + str(rmse_std_dist))
+        print("rms error for real values std_dist is: " + str(rmse_obj['rmse_std_dist']))
 
-        rmse_mean_time_norm = rmse(np.array(model_stats['mean_time']/all_values['mean_time']), np.array(
+        rmse_obj['rmse_mean_time_norm'] = rmse(np.array(model_stats['mean_time']/all_values['mean_time']), np.array(
             traj_stats['mean_time']/all_values['mean_time']))
-        print("rms error for normalized mean_time is: " + str(rmse_mean_time_norm))
+        print("rms error for normalized mean_time is: " + str(rmse_obj['rmse_mean_time_norm']))
 
-        rmse_mean_time = rmse(np.array(model_stats['mean_time']), np.array(
+        rmse_obj['rmse_mean_time'] = rmse(np.array(model_stats['mean_time']), np.array(
             traj_stats['mean_time']))
-        print("rms error for real values mean_time is: " + str(rmse_mean_time))
+        print("rms error for real values mean_time is: " + str(rmse_obj['rmse_mean_time']))
 
-        rmse_std_time_norm = rmse(
+        rmse_obj['rmse_std_time_norm'] = rmse(
             np.array(model_stats['std_time']/all_values['mean_time']), np.array(traj_stats['std_time']/all_values['mean_time']))
-        print("rms error for normalized std_time is: " + str(rmse_std_time_norm))
+        print("rms error for normalized std_time is: " + str(rmse_obj['rmse_std_time_norm']))
 
-        rmse_std_time = rmse(
+        rmse_obj['rmse_std_time'] = rmse(
             np.array(model_stats['std_time']), np.array(traj_stats['std_time']))
-        print("rms error for real values std_time is: " + str(rmse_std_time))
+        print("rms error for real values std_time is: " + str(rmse_obj['rmse_std_time']))
 
-        rmse_chisq_norm = rmse(
+        rmse_obj['rmse_chisq_norm'] = rmse(
             np.array(model_stats['chisq_new']/traj_stats['chisq']), np.array(traj_stats['chisq']/traj_stats['chisq']))
-        print("rms error for normalized chisqis: " + str(rmse_chisq_norm))
+        print("rms error for normalized chisqis: " + str(rmse_obj['rmse_chisq_norm']))
 
-        rmse_chisq=rmse(
+        rmse_obj['rmse_chisq']=rmse(
             np.array(model_stats['chisq_new']), np.array(traj_stats['chisq']))
-        print("rms error for real values chisqis: " + str(rmse_chisq))
+        print("rms error for real values chisqis: " + str(rmse_obj['rmse_chisq']))
 
-        rmse_p=rmse(np.array(model_stats['p_new']), np.array(traj_stats['p']))
-        print("rms error for p is: " + str(rmse_p))
+        rmse_obj['rmse_p']=rmse(np.array(model_stats['p_new']), np.array(traj_stats['p']))
+        print("rms error for p is: " + str(rmse_obj['rmse_p']))
+
+        return rmse_obj, model_stats, traj_stats, traj_full_stats
+
+
+if __name__ == '__main__':
+    # construct the argument parser and parse the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-input_trajectories", "--input_trajectories", required=True,
+                    help="path to input trajectories")
+    ap.add_argument("-model_stats", "--model_stats", required=True,
+                    help="path to the model output")
+    ap.add_argument("-calibration_trajectories", "--calibration_trajectories", required=True,
+                    help="path to the other trajectories to estimate means")
+
+    args = vars(ap.parse_args())
+    print('args', args)
+
+    results = validate_stats(args)
+
+    

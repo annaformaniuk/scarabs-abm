@@ -201,6 +201,7 @@ to create-beetle ; beetle setup
     set minimum-dist-from-source random-in-range 30 32 ; in patches
     set minimum-last-encounter-time random-in-range 3 6 ; in ticks
     set walking false
+    set current-speed 0
   ]
   set total-beetles total-beetles + 1
 end
@@ -251,7 +252,7 @@ to go  ; forever button
       ]
   ]
     ; keeping track of the mean speed of all beetles
-    set total-mean-speed mean [current-speed] of beetles
+    if count beetles with [ current-speed > 0 ] > 0 [set total-mean-speed mean [current-speed] of beetles with [current-speed > 0]]
     ; showing headings histograms on the interface
     update-heading-plot
 
@@ -323,7 +324,7 @@ to roll-ball
     if random 10 < 2 [
       let temp -1
       let rolling-temp ball-rolling-duration
-      show ball-rolling-duration
+      ;show ball-rolling-duration
       hatch-balls 1 [
         set color magenta
         set size 2
@@ -331,8 +332,8 @@ to roll-ball
         set temp who
         set ball-roughness (1 - (rolling-temp / 660))
 
-        show ball-roughness
-        show "done"
+        ;show ball-roughness
+        ;show "done"
       ]
       set has-ball? true
       set ball-id temp
@@ -562,6 +563,7 @@ to wander  ;; turtle procedure
       ]
     ] [
       ; nest if far enough and haven't seen anyone for long enough
+      show minimum-dist-from-source
       nest
     ]
   ]
@@ -905,7 +907,7 @@ protonum-width-impact
 protonum-width-impact
 0
 3
-1.0
+1.1
 0.05
 1
 NIL
@@ -920,7 +922,7 @@ ball-roughness-impact
 ball-roughness-impact
 0
 10
-0.5
+1.0
 0.1
 1
 NIL
@@ -1114,7 +1116,7 @@ SWITCH
 139
 additional-obstacles
 additional-obstacles
-0
+1
 1
 -1000
 

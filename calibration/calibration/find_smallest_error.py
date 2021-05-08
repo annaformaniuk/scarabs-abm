@@ -6,7 +6,7 @@ import math
 import statistics
 from scipy.stats import chisquare
 
-# python find_smallest_error.py -model_stats_folder "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\calibration\outputs" -validation_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\validation" -calibration_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\training"
+# python find_smallest_error.py -model_stats_folder "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\calibration\outputs_final" -validation_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\validation" -calibration_trajectories "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\training"
 
 
 def calculate_stats(pts, times, scale, displacement_vectors):
@@ -153,9 +153,9 @@ if __name__ == '__main__':
             all_values['distances'].append(real_total_length)
             all_values['durations'].append(time_length)
             all_values['headings'].append(
-                    heading_deviations)
+                heading_deviations)
             all_values['norm_headings'].append(
-                    (heading_deviations / np.sum(heading_deviations))*100)
+                (heading_deviations / np.sum(heading_deviations))*100)
 
         i += 1
 
@@ -218,8 +218,7 @@ if __name__ == '__main__':
                 all_values['headings'].append(
                     heading_deviations)
                 all_values['norm_headings'].append(
-                        (heading_deviations / np.sum(heading_deviations))*100)
-
+                    (heading_deviations / np.sum(heading_deviations))*100)
 
             i += 1
 
@@ -258,30 +257,31 @@ if __name__ == '__main__':
     all_values['p'] = chisquare(average_hist_all_norm)[1]
 
     # print('here come the model stats', model_stats)
-    # print('and here come the real stats', calibration_stats)
 
     # search for the smallest error
     for model_stats in model_stats_dicts:
         model_norm_values = np.array([
-            model_stats['mean_speeds']/all_values['mean_speeds'],
+            (model_stats['mean_speeds']/all_values['mean_speeds'])*10,
             model_stats['std_speeds']/all_values['mean_speeds'],
             model_stats['mean_dist']/all_values['mean_dist'],
-            model_stats['std_dist']/all_values['mean_dist'],
+            (model_stats['std_dist']/all_values['mean_dist'])*0.1,
             model_stats['mean_time']/all_values['mean_time'],
-            model_stats['std_time']/all_values['mean_time'],
-            model_stats['chisq']/all_values['chisq']
+            (model_stats['std_time']/all_values['mean_time'])*0.1,
+            (model_stats['chisq']/all_values['chisq'])*0.01
         ]
         )
         trajectories_norm_values = np.array([
-            calibration_stats['mean_speeds']/all_values['mean_speeds'],
+            (calibration_stats['mean_speeds']/all_values['mean_speeds'])*10,
             calibration_stats['std_speeds']/all_values['mean_speeds'],
             calibration_stats['mean_dist']/all_values['mean_dist'],
-            calibration_stats['std_dist']/all_values['mean_dist'],
+            (calibration_stats['std_dist']/all_values['mean_dist'])*0.1,
             calibration_stats['mean_time']/all_values['mean_time'],
-            calibration_stats['std_time']/all_values['mean_time'],
-            calibration_stats['chisq']/all_values['chisq']
+            (calibration_stats['std_time']/all_values['mean_time'])*0.1,
+            (calibration_stats['chisq']/all_values['chisq'])*0.01
         ]
         )
+
+        # print('rmse inputs:', model_norm_values, trajectories_norm_values)
 
         rmse_total = rmse(model_norm_values, trajectories_norm_values)
         model_stats['rmse_total'] = rmse_total
@@ -294,5 +294,6 @@ if __name__ == '__main__':
     with open(filename, 'w') as f:
         json.dump(sorted_model_stats, f)
 
+    print('and here come the real stats', calibration_stats)
     print('FINAL OUTPUT')
     print(sorted_model_stats[0])

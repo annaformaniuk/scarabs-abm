@@ -57,10 +57,10 @@ def run_simulation(experiment, default=False):
 
         netlogo.command('setup')
 
-    # Run for 2000 ticks and return the number of beetles and their mean speeds
+    # Run for n ticks and return the number of beetles and their mean speeds
 
     counts = netlogo.repeat_report(
-        ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked'], 2000)
+        ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked'], 3000)
 
     print('Done running model')
 
@@ -100,14 +100,16 @@ if __name__ == '__main__':
 
     # bounds = np.arange(0.1, 2.6, 0.5)  # individual ?
     bounds = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
-    # first_bounds = [2.5]
+    protonum_bounds = [2.5]
+    ball_roughness_bounds = [1.5, 2.0, 2.5]
+    patch_roughness_bounds = [1.0, 1.5, 2.0, 2.5]
 
     problem = {
         'names': ['protonum-width-impact', 'ball-roughness-impact', 'patch-roughness-impact', 'seen-radius-impact', 'distance-threshold-impact'],
         'bounds': bounds,
     }
 
-    for protonum_value in bounds:
+    for protonum_value in protonum_bounds:
         for ball_roughness_value in bounds:
             for patch_roughness_value in bounds:
                 for seen_radius_value in bounds:
@@ -143,7 +145,7 @@ if __name__ == '__main__':
                                 'seen-radius-impact': input_values['seen-radius-impact']
                             }
 
-                            filename = "calibration/outputs/results_" + str(input_values['protonum-width-impact']) + "_" + str(input_values['ball-roughness-impact']) + "_" + str(
+                            filename = "calibration/outputs_final/results_" + str(input_values['protonum-width-impact']) + "_" + str(input_values['ball-roughness-impact']) + "_" + str(
                                 input_values['patch-roughness-impact']) + "_" + str(input_values['seen-radius-impact']) + "_" + str(input_values['distance-threshold-impact']) + ".json"
                             with open(filename, 'w') as f:
                                 json.dump(result_json, f)

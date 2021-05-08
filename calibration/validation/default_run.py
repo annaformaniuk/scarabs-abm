@@ -39,7 +39,7 @@ def run_simulation(experiment, default=False):
     # Run for 4000 ticks and return the number of beetles and their mean speeds
 
     counts = netlogo.repeat_report(
-        ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 2000)
+        ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 3000)
 
     print('Done')
 
@@ -54,19 +54,25 @@ def run_simulation(experiment, default=False):
     headings_int =  last_state_headings.astype(int)
     print(headings_int)
 
+    last_state_headings_norm = (headings_int / np.sum(headings_int))*100
+            
+    last_state_headings_norm_int =  last_state_headings_norm.astype(int)
+    print(last_state_headings_norm_int)
+    
     # distance-time preparation
     last_state_dist = counts['total-distances-walked'].iloc[-1]
     last_state_time = counts['total-durations-walked'].iloc[-1]
 
     result = {
-        'chisquare': chisquare(last_state_headings),
+        'chisquare': chisquare(last_state_headings_norm_int),
         'mean_speeds': trimmed.mean(),
         'std_speeds': np.std(trimmed),
         'mean_dist': last_state_dist.mean(),
         'std_dist': np.std(last_state_dist),
         'mean_time': last_state_time.mean(),
         'std_time': np.std(last_state_time),
-        'heading_deviations': headings_int.tolist()
+        'heading_deviations': headings_int.tolist(),
+        'heading_deviations_norm': last_state_headings_norm_int.tolist()
     }
 
     print("sending", save_value, result)
@@ -88,6 +94,7 @@ if __name__ == '__main__':
         'mean_speeds': results['mean_speeds'],
         'std_speeds': results['std_speeds'],
         'heading_deviations': results['heading_deviations'],
+        'heading_deviations_norm': results['heading_deviations_norm'],
         'chisq': results['chisquare'][0],
         'p': results['chisquare'][1],
         'mean_dist': results['mean_dist'],
@@ -95,6 +102,8 @@ if __name__ == '__main__':
         'mean_time': results['mean_time'],
         'std_time': results['std_time']
     }
+
+    print("got results")
 
     filename = "results_default.json"
     with open(filename, 'w') as f:

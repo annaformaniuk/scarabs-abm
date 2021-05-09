@@ -121,7 +121,7 @@ if __name__ == '__main__':
     ax5[0].boxplot(traj_stats_values[0], labels=[traj_stats_names[0]])
     ax5[1].boxplot(traj_stats_values[1], labels=[traj_stats_names[1]])
     ax5[2].boxplot(traj_stats_values[2], labels=[traj_stats_names[2]])
-    fig.suptitle('Real validation trajectories statistics')
+    fig5.suptitle('Real validation trajectories statistics')
 
     plt.show()
     

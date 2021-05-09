@@ -892,7 +892,7 @@ patch-roughness-impact
 patch-roughness-impact
 0
 10
-2.0
+1.0
 0.1
 1
 NIL
@@ -922,7 +922,7 @@ ball-roughness-impact
 ball-roughness-impact
 0
 10
-1.5
+1.0
 0.1
 1
 NIL
@@ -937,7 +937,7 @@ distance-threshold-impact
 distance-threshold-impact
 0
 10
-0.1
+1.0
 0.1
 1
 NIL
@@ -967,7 +967,7 @@ seen-radius-impact
 seen-radius-impact
 0
 10
-2.0
+1.0
 0.1
 1
 NIL

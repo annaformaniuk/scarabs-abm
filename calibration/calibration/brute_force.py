@@ -71,7 +71,8 @@ def run_simulation(experiment, default=False):
     last_state_headings = counts['average-headings'].iloc[-1]
     last_state_headings_list = last_state_headings.tolist()
 
-    last_state_headings_norm_list = ((last_state_headings / np.sum(last_state_headings))*100).tolist()
+    last_state_headings_norm_list = (
+        (last_state_headings / np.sum(last_state_headings))*100).tolist()
 
     # distance-time preparation
     last_state_dist = counts['total-distances-walked'].iloc[-1]
@@ -94,15 +95,12 @@ def run_simulation(experiment, default=False):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
-    # bounds = np.arange(0.1, 2.6, 0.5)  # individual ?
     bounds = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
-    protonum_bounds = [2.5]
-    ball_roughness_bounds = [1.5, 2.0, 2.5]
-    patch_roughness_bounds = [1.0, 1.5, 2.0, 2.5]
+    protonum_bounds = [2.5]  # set to the current iteration
 
     problem = {
         'names': ['protonum-width-impact', 'ball-roughness-impact', 'patch-roughness-impact', 'seen-radius-impact', 'distance-threshold-impact'],

@@ -5,170 +5,91 @@ import matplotlib.pyplot as plt
 import imutils
 cv2.ocl.setUseOpenCL(False)
 
+def draw_trajectory(image, trajectory, i):
+    copy = image.copy()
+    trajectory_array = np.array(trajectory)
+    pts = trajectory_array.reshape((-1, 1, 2))
+    isClosed = False
+    color = (0, 0, 255)
+    thickness = 5
 
-def detect_and_describe(image, mask, method=None):
-    """
-    Compute key points and feature descriptors using an specific method
-    """
+    traj_img = cv2.polylines(copy, [pts],
+                              isClosed, color, thickness)
 
-    assert method is not None, "You need to define a feature detection method. Values are: 'sift', 'surf'"
-
-    # detect and extract features from the image
-    if method == 'sift':
-        descriptor = cv2.xfeatures2d.SIFT_create()
-    elif method == 'surf':
-        descriptor = cv2.xfeatures2d.SURF_create()
-    elif method == 'brisk':
-        descriptor = cv2.BRISK_create()
-    elif method == 'orb':
-        descriptor = cv2.ORB_create()  # 500?
-
-    # cv2.imshow('mask to search keypoints', mask)
-    # cv2.imshow('frame to search keypoints', image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    # get keypoints and descriptors
-    if(mask is not None):
-        # gray_mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        (kps, features) = descriptor.detectAndCompute(image, mask)
-    else:
-        (kps, features) = descriptor.detectAndCompute(image, mask)
-
-    return (kps, features)
+    # cv2.imshow('traj_img', traj_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    cv2.imwrite(str(i) + 'trajectory_reconstruction_stitching.png', traj_img)
 
 
-def create_matcher(method, crossCheck):
-    "Create and return a Matcher Object"
-
-    if method == 'sift' or method == 'surf':
-        bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=crossCheck)
-    elif method == 'orb' or method == 'brisk':
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=crossCheck)
-    return bf
-
-
-def match_keypoints_BF(featuresA, featuresB, method):
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-    # Match descriptors.
-    best_matches = bf.match(featuresA, featuresB)
-
-    # Sort the features in order of Hamming distance.
-    # The points with small distance (more similarity) are ordered first in the vector
-    rawMatches = sorted(best_matches, key=lambda x: x.distance)
-    print("Raw matches (Brute force):", len(rawMatches))
-    return rawMatches
-
-
-def match_keypoints_KNN(featuresA, featuresB, ratio, method):
-    bf = create_matcher(method, crossCheck=False)
-    # compute the raw matches and initialize the list of actual matches
-    rawMatches = bf.knnMatch(featuresA, featuresB, 2)
-    print("Raw matches (knn):", len(rawMatches))
-    matches = []
-
-    # loop over the raw matches
-    for m, n in rawMatches:
-        # ensure the distance is within a certain ratio of each
-        # other (i.e. Lowe's ratio test)
-        if m.distance < n.distance * ratio:
-            matches.append(m)
-    return matches
-
-
-def calculate_homography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh):
-    # convert the keypoints to numpy arrays
-    kpsA = np.float32([kp.pt for kp in kpsA])
-    kpsB = np.float32([kp.pt for kp in kpsB])
-
-    if len(matches) > 4:
-
-        # construct the two sets of points
-        ptsA = np.float32([kpsA[m.queryIdx] for m in matches])
-        ptsB = np.float32([kpsB[m.trainIdx] for m in matches])
-
-        # estimate the homography between the sets of points
-        (H, status) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC,
-                                         reprojThresh)
-
-        return (matches, H, status, ptsA, ptsB)
-    else:
-        return None
-
-
-def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
+def other_stitching(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, frame_index, new_centroid, old_centroids):
     # img1 align, img2 ref
 
-    feature_extractor = 'orb'  # one of 'sift', 'surf', 'brisk', 'orb'
-    feature_matching = 'bf'
-
-    kernel = np.array([[-1, -1, -1],
-                       [-1, 9, -1],
-                       [-1, -1, -1]])
+    img2_padded = cv2.copyMakeBorder(
+        img2_color, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    height_orig, width_orig, depth_orig = img2_color.shape
+    background_mask_padded = cv2.copyMakeBorder(
+        background_mask, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    landscape_ref_padded = cv2.copyMakeBorder(
+        landscapeReference, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
     # Convert to grayscale.
     img1 = cv2.cvtColor(img1_color, cv2.COLOR_BGR2GRAY)
-    img2 = cv2.cvtColor(img2_color, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(img2_padded, cv2.COLOR_BGR2GRAY)
+    height, width = img2.shape
 
     img1 = cv2.fastNlMeansDenoising(img1, 30.0, 7, 21)
     img2 = cv2.fastNlMeansDenoising(img2, 30.0, 7, 21)
 
+    # Create ORB detector with 5000 features.
+    orb_detector = cv2.ORB_create(5000)
+
     # Find keypoints and descriptors.
-    kp1, d1 = detect_and_describe(
-        img1, mask=foreground_mask, method=feature_extractor)
-    kp2, d2 = detect_and_describe(
-        img2, mask=background_mask, method=feature_extractor)
+    # The first arg is the image, second arg is the mask
+    #  (which is not reqiured in this case).
+    kp1, d1 = orb_detector.detectAndCompute(img1, foreground_mask)
+    kp2, d2 = orb_detector.detectAndCompute(img2, background_mask_padded)
 
     # Match features between the two images.
-    # Sort them on the basis of their Hamming distance.
-    matches = match_keypoints_BF(d1, d2, method=feature_matching)
-    # img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100],
-    #                        None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    # fig = plt.figure(figsize=(16, 8))
-    # plt.imshow(img3)
-    # plt.show()
+    # We create a Brute Force matcher with
+    # Hamming distance as measurement mode.
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+    if (d1 is None or d2 is None):
+        return img2_color, background_mask, landscapeReference, old_centroids
+
+    # Match the two sets of descriptors.
+    matches = matcher.match(d1, d2)
+
+    # Sort matches on the basis of their Hamming distance.
+    matches.sort(key=lambda x: x.distance)
 
     # Take the top 90 % matches forward.
     matches = matches[:int(len(matches)*90)]
+    no_of_matches = len(matches)
 
-    (matches, homography, status, ptsA, ptsB) = calculate_homography(
-        kp1, kp2, d1, d2, matches, reprojThresh=4)
+    # Define empty matrices of shape no_of_matches * 2.
+    p1 = np.zeros((no_of_matches, 2))
+    p2 = np.zeros((no_of_matches, 2))
 
-    height1, width1, depth1 = img1_color.shape
-    height2, width2, depth2 = img2_color.shape
-    height = height1 + height2
-    width = width1 + width2
+    for i in range(len(matches)):
+        p1[i, :] = kp1[matches[i].queryIdx].pt
+        p2[i, :] = kp2[matches[i].trainIdx].pt
 
-    # all this not to crop the left and top sides because they will have negative values
-    input_corners = np.array([[0, 0], [width1, 0], [0, height1], [
-                             width1, height1]], dtype=np.float32)
-    output_corners = cv2.perspectiveTransform(
-        input_corners[np.newaxis], homography)
-    bounding_rect = cv2.boundingRect(output_corners)  # x,y,w,h
+    # Find the homography matrix.
 
-    ptsA_new = []
-    for point in ptsA:
-        ptsA_new.append(np.array(
-            [int(point[0] + bounding_rect[0]), int(point[1] + bounding_rect[1])], dtype=np.float32))
-
-    ptsA_new = np.array(ptsA_new, dtype=np.float32)
-
-    # homography_new = cv2.getPerspectiveTransform(ptsA, ptsB)
-    (homography_new, status) = cv2.findHomography(ptsA_new, ptsB, cv2.RANSAC, 4)
+    homography, _ = cv2.estimateAffinePartial2D(p1, p2)
 
     # Use this matrix to transform the
     # colored image wrt the reference image.
-    transformed_img = cv2.warpPerspective(img1_color,
-                                          homography_new, (width, height))
+    transformed_img = cv2.warpAffine(img1_color,
+                                     homography, (width, height))
 
-    transformed_mask = cv2.warpPerspective(foreground_mask,
-                                           homography_new, (width, height))
+    transformed_mask = cv2.warpAffine(foreground_mask,
+                                      homography, (width, height))
 
-    print("bounding rect", bounding_rect)
-
-    img2_padded = cv2.copyMakeBorder(img2_color, abs(bounding_rect[0]), height - height2 - abs(bounding_rect[0]), abs(
-        bounding_rect[1]), width - width2 - abs(bounding_rect[1]), cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    transformed_landscape = cv2.warpAffine(ladscapeFront,
+                                           homography, (width, height))
 
     gray = cv2.cvtColor(transformed_img, cv2.COLOR_BGR2GRAY)
     overlay_mask = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)[1]
@@ -183,6 +104,15 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     overlay_part = (transformed_img * (1 / 255.0)) * \
         (overlay_mask * (1 / 255.0))
     dst = np.uint8(cv2.addWeighted(ref_part, 255.0, overlay_part, 255.0, 0.0))
+
+    dst_orig_shape = dst.shape
+
+    landscape_part = (landscape_ref_padded * (1 / 255.0)) * \
+        (background_mask * (1 / 255.0))
+    landscape_overlay_part = (transformed_landscape * (1 / 255.0)) * \
+        (overlay_mask * (1 / 255.0))
+    landscape_dst = np.uint8(cv2.addWeighted(
+        landscape_part, 255.0, landscape_overlay_part, 255.0, 0.0))
 
     gray = cv2.cvtColor(dst, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
@@ -200,10 +130,113 @@ def stitch_images(img1_color, img2_color, foreground_mask, background_mask):
     overlay_mask = cv2.cvtColor(overlay_mask, cv2.COLOR_BGR2GRAY)
     transformed_mask = transformed_mask[y:y+h, x:x+w]
     overlay_mask = cv2.bitwise_and(overlay_mask, transformed_mask)
+    landscape_dst = landscape_dst[y:y+h, x:x+w]
 
-    cv2.imshow('overlay_mask', overlay_mask)
-    cv2.imshow('dst', dst)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    print("bounding box", x, y, w, h)
+    print("original and new resolutions", dst_orig_shape, dst.shape)
 
-    return dst, overlay_mask
+    new_centroid_transformed = cv2.transform(
+        np.array([[new_centroid]]), homography)[0]
+    new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(
+        new_centroid_transformed[0][1]))
+    new_centroid_dst = (new_centroid_tuple[0] - x, new_centroid_tuple[1] - y)
+    test = dst.copy()
+    test = cv2.circle(test, new_centroid_dst, radius=3,
+                      color=(0, 0, 255), thickness=-1)
+
+    new_centroids = []
+    offset_x = 200 - x
+    offset_y = 200 - y
+    print("offsets", offset_x, offset_y)
+
+    for centroid in old_centroids:
+        centroid_offset = (centroid[0] + offset_x, centroid[1] + offset_y)
+        # print(centroid, centroid_offset)
+        new_centroids.append(centroid_offset)
+        test = cv2.circle(test, centroid_offset, radius=3,
+                          color=(0, 255, 255), thickness=-1)
+
+    # cv2.imshow('stitching result', test)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    cv2.imwrite(str(frame_index)+'stitched_old.png', test)
+    cv2.imwrite(str(frame_index)+'stitched_landscape.png', landscape_dst)
+    cv2.imwrite(str(frame_index)+'stitched_landscape_last.png', ladscapeFront)
+
+    new_centroids.append(new_centroid_dst)
+    draw_trajectory(dst, new_centroids, frame_index)
+    
+
+    return dst, overlay_mask, landscape_dst, new_centroids
+
+
+def match_pairwise(img1_color, img2_color, foreground_mask, background_mask, landscapeReference, ladscapeFront, new_centroid):
+        # img1 align, img2 ref
+
+    # Convert to grayscale.
+    img1 = cv2.cvtColor(img1_color, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(img2_color, cv2.COLOR_BGR2GRAY)
+    height, width = img2.shape
+
+    img1 = cv2.fastNlMeansDenoising(img1, 30.0, 7, 21)
+    img2 = cv2.fastNlMeansDenoising(img2, 30.0, 7, 21)
+
+    # Create ORB detector with 5000 features.
+    orb_detector = cv2.ORB_create(5000)
+
+    # Find keypoints and descriptors.
+    # The first arg is the image, second arg is the mask
+    #  (which is not reqiured in this case).
+    kp1, d1 = orb_detector.detectAndCompute(img1, foreground_mask)
+    kp2, d2 = orb_detector.detectAndCompute(img2, background_mask)
+
+    # Match features between the two images.
+    # We create a Brute Force matcher with
+    # Hamming distance as measurement mode.
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+    # Match the two sets of descriptors.
+    matches = matcher.match(d1, d2)
+
+    # Sort matches on the basis of their Hamming distance.
+    matches.sort(key=lambda x: x.distance)
+
+    # Take the top 90 % matches forward.
+    matches = matches[:int(len(matches)*90)]
+    no_of_matches = len(matches)
+
+    # Define empty matrices of shape no_of_matches * 2.
+    p1 = np.zeros((no_of_matches, 2))
+    p2 = np.zeros((no_of_matches, 2))
+
+    for i in range(len(matches)):
+        p1[i, :] = kp1[matches[i].queryIdx].pt
+        p2[i, :] = kp2[matches[i].trainIdx].pt
+
+    # Find the homography matrix.
+
+    homography, _ = cv2.estimateAffinePartial2D(p1, p2)
+    # (homography, status) = cv2.findHomography(p1, p2, cv2.RANSAC, 4)
+
+    # Use this matrix to transform the
+    # colored image wrt the reference image.
+    transformed_img = cv2.warpAffine(img1_color,
+                                     homography, (width, height))
+
+    to_transform = np.array([new_centroid], dtype=np.float32)
+    new_centroid_transformed = cv2.transform(
+        to_transform[np.newaxis], homography)[0]
+    new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(
+        new_centroid_transformed[0][1]))
+    test = transformed_img.copy()
+    test = cv2.circle(test, new_centroid_tuple, radius=3,
+                      color=(0, 0, 255), thickness=-1)
+
+    # cv2.imshow('reference', img2_color)
+    # cv2.imshow('matched image', test)
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
+
+    return transformed_img, new_centroid_tuple
+
+

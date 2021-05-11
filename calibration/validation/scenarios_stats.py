@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import pyNetLogo
 
 
-
 def run_simulation(experiment, default=False):
     '''run a netlogo model
 
@@ -37,7 +36,7 @@ def run_simulation(experiment, default=False):
 
         netlogo.command('setup')
 
-    # Run for 3000 ticks and return the number of beetles and their mean speeds
+    # Run for 3000 ticks
 
     counts = netlogo.repeat_report(
         ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 3000)
@@ -50,16 +49,12 @@ def run_simulation(experiment, default=False):
     # headings preparation
     last_state_headings = counts['average-headings'].iloc[-1]
 
-    print(last_state_headings)
-
-    headings_int =  last_state_headings.astype(int)
-    print(headings_int)
+    headings_int = last_state_headings.astype(int)
 
     last_state_headings_norm = (headings_int / np.sum(headings_int))*100
-            
-    last_state_headings_norm_int =  last_state_headings_norm.astype(int)
-    print(last_state_headings_norm_int)
-    
+
+    last_state_headings_norm_int = last_state_headings_norm.astype(int)
+
     # distance-time preparation
     last_state_dist = counts['total-distances-walked'].iloc[-1]
     last_state_time = counts['total-durations-walked'].iloc[-1]
@@ -82,7 +77,7 @@ def run_simulation(experiment, default=False):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
@@ -113,7 +108,8 @@ if __name__ == '__main__':
     print('ready to run the more beetles one')
 
     netlogo.load_model(modelfile)
-    input_value, results_beetles = run_simulation({'beetles-at-pile': 10}, False)
+    input_value, results_beetles = run_simulation(
+        {'beetles-at-pile': 10}, False)
     results_beetles_json = {
         'mean_speeds': results_beetles['mean_speeds'],
         'std_speeds': results_beetles['std_speeds'],
@@ -136,7 +132,8 @@ if __name__ == '__main__':
     print('ready to run the more obstacles one')
 
     netlogo.load_model(modelfile)
-    input_value, results_obstacles = run_simulation({'additional-obstacles': True}, False)
+    input_value, results_obstacles = run_simulation(
+        {'additional-obstacles': True}, False)
     results_obstacles_json = {
         'mean_speeds': results_obstacles['mean_speeds'],
         'std_speeds': results_obstacles['std_speeds'],
@@ -156,13 +153,13 @@ if __name__ == '__main__':
     with open(filename, 'w') as f:
         json.dump(results_obstacles_json, f)
 
-
     # now all the plotting
-    model_params = ['mean_speeds', 'mean_dist', 'mean_time', 'heading_deviations_norm']
+    model_params = ['mean_speeds', 'mean_dist',
+                    'mean_time', 'heading_deviations_norm']
     model_stds = ['std_speeds', 'std_dist', 'std_time']
     params_visualisation = ['Speed', 'Distance', 'Time']
     bins = np.arange(0, 361, 30)
-    bins_strings =  ['< ' + str(s) for s in bins]
+    bins_strings = ['< ' + str(s) for s in bins]
 
     calibrated_model_params = []
     calibrated_model_stds = []
@@ -175,9 +172,11 @@ if __name__ == '__main__':
         if (name != 'heading_deviations_norm'):
             calibrated_model_params.append(round(results[name], 1))
             more_beetles_model_params.append(round(results_beetles[name], 1))
-            more_obstacles_model_params.append(round(results_obstacles[name], 1))
+            more_obstacles_model_params.append(
+                round(results_obstacles[name], 1))
         else:
-            print(results[name], results_beetles[name], results_obstacles[name])
+            print(results[name], results_beetles[name],
+                  results_obstacles[name])
             calibrated_model_params.append(results[name])
             more_beetles_model_params.append(results_beetles[name])
             more_obstacles_model_params.append(results_obstacles[name])
@@ -188,62 +187,77 @@ if __name__ == '__main__':
         more_obstacles_model_stds.append(round(results_obstacles[name], 1))
 
     fig3, axs3 = plt.subplots(1, 2, sharey=True)
-    fig3.suptitle('Results of heading histograms for default model and model with more beetles')
+    fig3.suptitle(
+        'Results of heading histograms for default model and model with more beetles')
     axs3[0].bar(bins_strings[1:], calibrated_model_params[3])
     axs3[1].bar(bins_strings[1:], more_beetles_model_params[3])
 
     plt.show()
 
     fig4, axs4 = plt.subplots(1, 2, sharey=True)
-    fig4.suptitle('Results of heading histograms for default model and model with more obstacles')
+    fig4.suptitle(
+        'Results of heading histograms for default model and model with more obstacles')
     axs4[0].bar(bins_strings[1:], calibrated_model_params[3])
     axs4[1].bar(bins_strings[1:], more_obstacles_model_params[3])
 
     plt.show()
 
     fig0, axs0 = plt.subplots(1, 2, sharey=True)
-    fig0.suptitle('Results of default model and model with more beetles for speed')
-    axs0[0].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [calibrated_model_stds[0]], fmt='ok')
-    axs0[1].errorbar([params_visualisation[0]], [more_beetles_model_params[0]], [more_obstacles_model_stds[0]], fmt='ok')
+    fig0.suptitle(
+        'Results of default model and model with more beetles for speed')
+    axs0[0].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [
+                     calibrated_model_stds[0]], fmt='ok')
+    axs0[1].errorbar([params_visualisation[0]], [more_beetles_model_params[0]], [
+                     more_obstacles_model_stds[0]], fmt='ok')
 
     plt.show()
 
     fig1, axs1 = plt.subplots(1, 2, sharey=True)
-    fig1.suptitle('Results of default model and model with more beetles for distances')
-    axs1[0].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [calibrated_model_stds[1]], fmt='ok')
-    axs1[1].errorbar([params_visualisation[1]], [more_beetles_model_params[1]], [more_obstacles_model_stds[1]], fmt='ok')
+    fig1.suptitle(
+        'Results of default model and model with more beetles for distances')
+    axs1[0].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [
+                     calibrated_model_stds[1]], fmt='ok')
+    axs1[1].errorbar([params_visualisation[1]], [more_beetles_model_params[1]], [
+                     more_obstacles_model_stds[1]], fmt='ok')
 
     plt.show()
 
     fig2, axs2 = plt.subplots(1, 2, sharey=True)
-    fig2.suptitle('Results of default model and model with more beetles for times')
-    axs2[0].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [calibrated_model_stds[2]], fmt='ok')
-    axs2[1].errorbar([params_visualisation[2]], [more_beetles_model_params[2]], [more_obstacles_model_stds[2]], fmt='ok')
+    fig2.suptitle(
+        'Results of default model and model with more beetles for times')
+    axs2[0].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [
+                     calibrated_model_stds[2]], fmt='ok')
+    axs2[1].errorbar([params_visualisation[2]], [more_beetles_model_params[2]], [
+                     more_obstacles_model_stds[2]], fmt='ok')
 
     plt.show()
-
-    
 
     fig0, axs0 = plt.subplots(1, 2, sharey=True)
-    fig0.suptitle('Results of default model and model with more obstacles for speed')
-    axs0[0].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [calibrated_model_stds[0]], fmt='ok')
-    axs0[1].errorbar([params_visualisation[0]], [more_obstacles_model_params[0]], [more_obstacles_model_stds[0]], fmt='ok')
+    fig0.suptitle(
+        'Results of default model and model with more obstacles for speed')
+    axs0[0].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [
+                     calibrated_model_stds[0]], fmt='ok')
+    axs0[1].errorbar([params_visualisation[0]], [more_obstacles_model_params[0]], [
+                     more_obstacles_model_stds[0]], fmt='ok')
 
     plt.show()
 
     fig1, axs1 = plt.subplots(1, 2, sharey=True)
-    fig1.suptitle('Results of default model and model with more obstacles for distances')
-    axs1[0].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [calibrated_model_stds[1]], fmt='ok')
-    axs1[1].errorbar([params_visualisation[1]], [more_obstacles_model_params[1]], [more_obstacles_model_stds[1]], fmt='ok')
+    fig1.suptitle(
+        'Results of default model and model with more obstacles for distances')
+    axs1[0].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [
+                     calibrated_model_stds[1]], fmt='ok')
+    axs1[1].errorbar([params_visualisation[1]], [more_obstacles_model_params[1]], [
+                     more_obstacles_model_stds[1]], fmt='ok')
 
     plt.show()
 
     fig2, axs2 = plt.subplots(1, 2, sharey=True)
-    fig2.suptitle('Results of default model and model with more obstacles for times')
-    axs2[0].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [calibrated_model_stds[2]], fmt='ok')
-    axs2[1].errorbar([params_visualisation[2]], [more_obstacles_model_params[2]], [more_obstacles_model_stds[2]], fmt='ok')
+    fig2.suptitle(
+        'Results of default model and model with more obstacles for times')
+    axs2[0].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [
+                     calibrated_model_stds[2]], fmt='ok')
+    axs2[1].errorbar([params_visualisation[2]], [more_obstacles_model_params[2]], [
+                     more_obstacles_model_stds[2]], fmt='ok')
 
     plt.show()
-
-    
-

@@ -1,9 +1,5 @@
 import numpy as np
 import cv2
-import random
-import string
-import os
-import re
 import argparse
 # python make_border.py --image_path "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\480stitched_landscape_last.png"
 

@@ -12,12 +12,12 @@ class Yolo_detector():
         self.IOU_THRESHOLD = 0.5
 
         # the neural network configuration
-        config_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
+        config_path = r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
         # the YOLO net weights file
-        weights_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
+        weights_path = r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
 
         # loading all the class labels (objects)
-        self.labels = open(r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj.names").read(
+        self.labels = open(r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\data\obj.names").read(
         ).strip().split("\n")
         # generating colors for each object for later plotting
         # colors = np.random.randint(
@@ -29,7 +29,7 @@ class Yolo_detector():
 
     """
     # Name: detect_objects(self, image)
-    # Description: yes
+    # Description: receives and image and looks for a beetle or a dung ball with Yolo.
     # @args:
     #    all_points: the frame on which beetle or ball are to be searched for
     # @return
@@ -39,6 +39,7 @@ class Yolo_detector():
     """
 
     def detect_objects(self, image):
+        # from https://cloudxlab.com/blog/object-detection-yolo-and-python-pydarknet/
         h, w = image.shape[:2]
         # create 4D blob
         blob = cv2.dnn.blobFromImage(

@@ -5,10 +5,8 @@ import json
 import math
 from scipy.stats import chisquare
 
-# python trajectories_to_statistics.py -input "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\thesis-vis\todo" 
-# 
-# 
-# -output "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\trajectory-extraction\trajectories"
+# python trajectories_to_statistics.py -input "F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\calibration\trajectories\the" 
+
 
 def calculate_stats(pts, times, scale, displacement_vectors):
     # first calculate the total length of the trajectory
@@ -27,7 +25,6 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 
     # and the speeds
     speeds = np.divide(real_lengths, time_diffs)
-    # print('all speeds during the trajectory, cm/second', speeds)
     average_speed = np.average(speeds)
     print('average speed, cm/second', average_speed)
 
@@ -43,18 +40,15 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 
     headings = np.apply_along_axis(heading, 1, displacement_vectors_ar)
     headings = np.delete(headings, 0)
-    # print('headings total', headings)
 
-    # find what heading the beetle chose (10 ?)
+    # find what heading the beetle chose
     first_headings = headings[:5]
     default_heading = np.average(first_headings)
     print('default heading', default_heading)
-    
-    # TODO handle circularity
 
     # Calculate deviations
     heading_deviations = np.subtract(headings, [default_heading]).astype(int)
-    # print('heading_deviations', heading_deviations)
+
     # same bins as in netlogo
     bins = np.arange(0, 361, 30)
     histogram = np.histogram(heading_deviations, bins=bins)
@@ -69,8 +63,6 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-input", "--input_folder", required=True,
                     help="path to input trajectories")
-    # ap.add_argument("-output", "--output_folder", required=False,
-    #                 help="path to output folder where to save the results")
 
     args = vars(ap.parse_args())
 
@@ -100,7 +92,8 @@ if __name__ == '__main__':
                 else:
                     times_list.append(point['frame_number'] / fps)
 
-            something = calculate_stats(trajectory_list, times_list, scale, displacement_vectors)
+            stats = calculate_stats(trajectory_list, times_list, scale, displacement_vectors)
+            print(stats)
 
         i += 1
 

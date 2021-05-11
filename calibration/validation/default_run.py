@@ -6,7 +6,6 @@ import json
 import pyNetLogo
 
 
-
 def run_simulation(experiment, default=False):
     '''run a netlogo model
 
@@ -36,7 +35,7 @@ def run_simulation(experiment, default=False):
 
         netlogo.command('setup')
 
-    # Run for 4000 ticks and return the number of beetles and their mean speeds
+    # Run for 3000 ticks
 
     counts = netlogo.repeat_report(
         ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 3000)
@@ -51,14 +50,14 @@ def run_simulation(experiment, default=False):
 
     print(last_state_headings)
 
-    headings_int =  last_state_headings.astype(int)
+    headings_int = last_state_headings.astype(int)
     print(headings_int)
 
     last_state_headings_norm = (headings_int / np.sum(headings_int))*100
-            
-    last_state_headings_norm_int =  last_state_headings_norm.astype(int)
+
+    last_state_headings_norm_int = last_state_headings_norm.astype(int)
     print(last_state_headings_norm_int)
-    
+
     # distance-time preparation
     last_state_dist = counts['total-distances-walked'].iloc[-1]
     last_state_time = counts['total-durations-walked'].iloc[-1]
@@ -81,13 +80,13 @@ def run_simulation(experiment, default=False):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
     print('ready to run the default one')
 
-    # do the default run first
+    # do the default run
     netlogo.load_model(modelfile)
     input_value, results = run_simulation(None, True)
     result_json = {

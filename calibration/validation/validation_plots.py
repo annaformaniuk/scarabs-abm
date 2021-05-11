@@ -38,19 +38,19 @@ if __name__ == '__main__':
         'calibration_trajectories': args['calibration_trajectories']
     }
 
-    default_results, default_model, validation_traj, traj_full_stats = validate_stats(default_args)
-    # print('uncalibrated model results', default_model, validation_traj)
+    default_results, default_model, validation_traj, traj_full_stats = validate_stats(
+        default_args)
 
-    calibrated_results, calibrated_model, validation_traj, traj_full_stats = validate_stats(calibrated_args)
-    # print('calibrated model results', calibrated_model, validation_traj)
-    
+    calibrated_results, calibrated_model, validation_traj, traj_full_stats = validate_stats(
+        calibrated_args)
+
     print('got both', default_results, calibrated_results)
 
     default_values = []
     calibrated_values = []
 
     rmse_names = ['rmse_mean_speeds', 'rmse_std_speeds', 'rmse_mean_dist',
-             'rmse_std_dist', 'rmse_mean_time', 'rmse_std_time']
+                  'rmse_std_dist', 'rmse_mean_time', 'rmse_std_time']
     for name in rmse_names:
         default_values.append(round(default_results[name], 1))
         calibrated_values.append(round(calibrated_results[name], 1))
@@ -58,7 +58,8 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     ax.bar(rmse_names, default_values, label="Pre-Calibration")
     ax.bar(rmse_names, calibrated_values, label="Post-Calibration")
-    fig.suptitle('Root mean square error before and after calibration', fontsize=32)
+    fig.suptitle(
+        'Root mean square error before and after calibration', fontsize=32)
     ax.legend()
     ax.yaxis.label.set_size(24)
     ax.yaxis.label.set_size(24)
@@ -89,28 +90,38 @@ if __name__ == '__main__':
         calibrated_model_stds.append(round(calibrated_model[name], 1))
 
     fig2, axs2 = plt.subplots(1, 2, sharey=True)
-    fig2.suptitle('Results of uncalibrated and calibrated model runs for speed')
-    axs2[0].errorbar([params_visualisation[0]], [default_model_params[0]], [default_model_stds[0]], fmt='ok')
-    axs2[1].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [calibrated_model_stds[0]], fmt='ok')
+    fig2.suptitle(
+        'Results of uncalibrated and calibrated model runs for speed')
+    axs2[0].errorbar([params_visualisation[0]], [default_model_params[0]], [
+                     default_model_stds[0]], fmt='ok')
+    axs2[1].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [
+                     calibrated_model_stds[0]], fmt='ok')
 
     plt.show()
 
     fig3, axs3 = plt.subplots(1, 2, sharey=True)
-    fig3.suptitle('Results of uncalibrated and calibrated model runs for distances')
-    axs3[0].errorbar([params_visualisation[1]], [default_model_params[1]], [default_model_stds[1]], fmt='ok')
-    axs3[1].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [calibrated_model_stds[1]], fmt='ok')
+    fig3.suptitle(
+        'Results of uncalibrated and calibrated model runs for distances')
+    axs3[0].errorbar([params_visualisation[1]], [default_model_params[1]], [
+                     default_model_stds[1]], fmt='ok')
+    axs3[1].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [
+                     calibrated_model_stds[1]], fmt='ok')
 
     plt.show()
 
     fig4, axs4 = plt.subplots(1, 2, sharey=True)
-    fig4.suptitle('Results of uncalibrated and calibrated model runs for times')
-    axs4[0].errorbar([params_visualisation[2]], [default_model_params[2]], [default_model_stds[2]], fmt='ok')
-    axs4[1].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [calibrated_model_stds[2]], fmt='ok')
+    fig4.suptitle(
+        'Results of uncalibrated and calibrated model runs for times')
+    axs4[0].errorbar([params_visualisation[2]], [default_model_params[2]], [
+                     default_model_stds[2]], fmt='ok')
+    axs4[1].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [
+                     calibrated_model_stds[2]], fmt='ok')
 
     plt.show()
 
     traj_stats_names = ['speeds_concatenated', 'distances', 'durations']
-    traj_full_stats['speeds_concatenated'] = np.concatenate(traj_full_stats['speeds'])
+    traj_full_stats['speeds_concatenated'] = np.concatenate(
+        traj_full_stats['speeds'])
     traj_stats_values = []
     for name in traj_stats_names:
         traj_stats_values.append(traj_full_stats[name])
@@ -124,6 +135,3 @@ if __name__ == '__main__':
     fig5.suptitle('Real validation trajectories statistics')
 
     plt.show()
-    
-
-    

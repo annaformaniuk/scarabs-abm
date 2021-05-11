@@ -45,7 +45,7 @@ def write_annotation(num, path, output_path, name, position, size):
             top_left = [int(i) for i in position.split(';')]
             h_w = [int(j) for j in size.split(';')]
             bottom_right = [top_left[0] + h_w[0], top_left[1] + h_w[1]]
-            # maybe vice versa?
+
             # print(top_left)
             # print(bottom_right)
 

@@ -39,6 +39,7 @@ class Yolo_detector():
     """
 
     def detect_objects(self, image):
+        # from https://cloudxlab.com/blog/object-detection-yolo-and-python-pydarknet/
         h, w = image.shape[:2]
         # create 4D blob
         blob = cv2.dnn.blobFromImage(

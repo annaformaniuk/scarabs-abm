@@ -17,10 +17,7 @@ print(os.path.isfile(args["image_path"]))
 if (os.path.isfile(args["image_path"])):
     image = cv2.imread(args["image_path"])
     # contours = Contours_detector()
-
-
     # landscape = contours.detect_landscape(image)
-
 
     blackwhite = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     cv2.imshow('blackwhite', blackwhite)

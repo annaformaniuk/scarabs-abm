@@ -1,24 +1,16 @@
 import numpy as np
 import cv2
-import random
-import string
 import os
-import re
 import argparse
 import math
-from frame_stitching import stitching, stitching_alt
+from frame_stitching import stitching
 from object_detection.yolo_detect_picture import Yolo_detector
-from frame_stitching.warping import get_warp_matrix
 from contours.contours_hed import Contours_detector
 from object_detection.shadow_detection import detect_shadow
-import matplotlib.pyplot as plt
 from imutils.video import count_frames
-# from geojson import Point, Feature, FeatureCollection, dump, lat, lon
 import json
+
 # python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Cut_trajectories\not_processed\Ambiguus_#14_Rolling from dung pat_20161117_cut.mp4" --ball_size 2
-
-# python video_to_displacement_vectors.py --video_path "F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized\cut\Lamarcki_#01_Rolling from dung pat_20161114_cut_720_supershort.mp4" --ball_size 2
-
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -42,11 +34,6 @@ def mask_out_objects(frame, objects):
         masked_objects[bounds[1]:bounds[3], bounds[0]:bounds[2]
                        ] = black_img[bounds[1]:bounds[3], bounds[0]:bounds[2]]
 
-    # cv2.imshow('mask', masked_objects)
-    # cv2.imshow('frame', frame)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
     return masked_objects
 
 
@@ -61,11 +48,10 @@ def get_diagonal(bounds):
     width = bounds[2] - bounds[0]
     height = bounds[3] - bounds[1]
     diagonal = math.sqrt(width**2 + height**2)
-    print("diagonal:", diagonal)
+    # print("diagonal:", diagonal)
     return int(diagonal)
 
 def save_geojson(points, vectors_array, name, ball_diagonal, ball_size, i):
-    empty_array = []
     points_json = {
         "properties": [
             {
@@ -86,9 +72,8 @@ def save_geojson(points, vectors_array, name, ball_diagonal, ball_size, i):
 
     points_json["points"].pop(0)
 
-    print('ready to save')
-
-    print(points_json)
+    # print('ready to save')
+    # print(points_json)
 
     filename = "trajectory_"+ name + ".json"
     with open(filename, 'w') as f:
@@ -97,8 +82,7 @@ def save_geojson(points, vectors_array, name, ball_diagonal, ball_size, i):
 def get_displacement_vector(first_coords, second_coords):
     scalar_x = second_coords[0] - first_coords[0]
     scalar_y = second_coords[1] - first_coords[1]
-    # print(first_coords, second_coords)
-    # print(scalar_x, scalar_y)
+
     return (scalar_x, scalar_y)
 
 
@@ -112,10 +96,8 @@ def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size, i):
     # it's the only constant object in the frames
     scale = reference_diagonal/diagonals_array
 
-    print("what is going oooonnn")
-    print(vectors_array)
     test = scale[:, np.newaxis]
-    print(test)
+
     diagonals_scaled_floats = np.multiply(vectors_array, scale[:, np.newaxis])
     diagonals_scaled = diagonals_scaled_floats.astype(int)
 
@@ -151,7 +133,7 @@ def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size, i):
     # cv2.destroyAllWindows()
     cv2.imwrite(str(name) + '_trajectory_reconstruction.png', black_img)
 
-    print(vectors_array)
+    # print(vectors_array)
 
     vectors_array_full = np.concatenate(([[0,0]],vectors_array))
     print(vectors_array_full)
@@ -159,7 +141,6 @@ def reproduce_trajectory(displacement_vectors, diagonals, name, ball_size, i):
 
 
 if (os.path.isfile(args["video_path"])):
-# def process_video(args):
     print(args)
     cap = cv2.VideoCapture(args["video_path"])
     yolo = Yolo_detector()
@@ -183,7 +164,7 @@ if (os.path.isfile(args["video_path"])):
         if ret:
             if (i == FIRST_FRAME):
                 imReference = frame.copy()
-                # that's what the previously matched frames will become, so that they are not used as reference
+                
                 height, width, depth = frame.shape
                 background_mask = 255 * np.ones((height, width, 1), np.uint8)
 
@@ -255,7 +236,7 @@ if (os.path.isfile(args["video_path"])):
                     
 
                     # finally stitching the images together and replacing variables
-                    matched_image, matched_coords = stitching_alt.match_pairwise(
+                    matched_image, matched_coords = stitching.match_pairwise(
                         frame, imReference, foreground_mask, background_mask, landscapeReference, landscapeFront, second_coords)
 
                     # calculate the displacement vector between first_coords and matched_coords
@@ -277,14 +258,8 @@ if (os.path.isfile(args["video_path"])):
                 landscapeReference = landscapeFront
                 background_mask = foreground_mask
 
-                # print(ball_diagonals)
-
                 ball_diagonals = list(
                     map(lambda x: int(np.average([y for y in ball_diagonals if y != None])) if x == None else x, ball_diagonals))
-
-                # print(ball_diagonals)
-
-            # if (i == total_frames_count - 1):
 
             if (i > total_frames_count - 10):
                 print(ball_diagonals)

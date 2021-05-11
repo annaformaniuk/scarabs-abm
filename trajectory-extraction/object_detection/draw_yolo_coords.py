@@ -10,9 +10,9 @@ import numpy as np
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-photos_folder", "--photos_folder", required=True,
-                help="Path to the images folder with annotations")
+                help="Path to the images folder")
 ap.add_argument("-annotations_folder", "--annotations_folder", required=True,
-                help="Path to the images folder with annotations")
+                help="Path to the folder with annotations")
 args = vars(ap.parse_args())
 
 
@@ -26,8 +26,6 @@ def get_random_color(classid):
 
 def from_yolo_to_cor(box, shape):
     img_h, img_w, _ = shape
-    # x1, y1 = ((x + witdth)/2)*img_width, ((y + height)/2)*img_height
-    # x2, y2 = ((x - witdth)/2)*img_width, ((y - height)/2)*img_height
     x1, y1 = int((box[0] + box[2]/2)*img_w), int((box[1] + box[3]/2)*img_h)
     x2, y2 = int((box[0] - box[2]/2)*img_w), int((box[1] - box[3]/2)*img_h)
     print("bounding box", x1, y1, x2, y2)
@@ -67,10 +65,10 @@ while i < len(txts):
                 cv2.rectangle(copyImage, (x1, y1), (x2, y2), (int(random_color[0]), int(random_color[1]), int(random_color[2])), 3)
 
 
-            #percent by which the image is resized
+            # percent by which the image is resized
             scale_percent = 50
 
-            #calculate the 50 percent of original dimensions
+            # calculate the 50 percent of original dimensions
             width = int(copyImage.shape[1] * scale_percent / 100)
             height = int(copyImage.shape[0] * scale_percent / 100)
             # dsize

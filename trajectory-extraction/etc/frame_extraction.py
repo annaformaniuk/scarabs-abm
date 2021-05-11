@@ -30,25 +30,6 @@ def save_frames(input_name, output_name):
     cap.release()
     cv.destroyAllWindows()
 
-    # while(1):
-        # ret, frame = cap.read()
-        # # counting what frame it is
-        # i = int(cap.get(cv.CAP_PROP_POS_FRAMES))
-
-        # print(i)
-        
-        # # stop before the video ends not to give an error
-        # if frame is None or i > 60000 :
-        #     break
-
-        # if (i % 1 == 0):
-        #     output = output_name + "/" + get_random_string(8) + ".jpg".format(i)
-        #     print(output)
-        #     cv.imwrite(output, frame)
-
-    # cap.release()
-    # cv.destroyAllWindows()
-
 if __name__ == '__main__':
     inputFolder = r"F:\Dokumente\Uni_Msc\Thesis\videos\Allogymnopleuri_Rolling from dung pat_201611\resized"
     outputFolder = r"F:\Dokumente\Uni_Msc\Thesis\trajectory_extraction\yolo_dataset"

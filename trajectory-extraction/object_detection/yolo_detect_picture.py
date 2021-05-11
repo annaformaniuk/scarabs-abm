@@ -29,7 +29,7 @@ class Yolo_detector():
 
     """
     # Name: detect_objects(self, image)
-    # Description: yes
+    # Description: receives and image and looks for a beetle or a dung ball with Yolo.
     # @args:
     #    all_points: the frame on which beetle or ball are to be searched for
     # @return

@@ -7,11 +7,11 @@ import sys
 CONFIDENCE = 0.3
 SCORE_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.5
-config_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
-weights_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
+config_path = r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
+weights_path = r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
 font_scale = 1
 thickness = 1
-labels = open(r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj.names").read().strip().split("\n")
+labels = open(r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\data\obj.names").read().strip().split("\n")
 colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
 
 net = cv2.dnn.readNetFromDarknet(config_path, weights_path)

@@ -4,7 +4,7 @@ import os
 import argparse
 import cv2
 import numpy as np
-#F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj
+#F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\data\obj
 # python draw_yolo_coords.py --photos_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Lamarcki_#09\Lamarcki_#09_imgs --annotations_folder F:\Dokumente\Uni_Msc\Thesis\frames_database\Lamarcki_#09\Lamarcki_#09_txt
 
 # construct the argument parser and parse the arguments

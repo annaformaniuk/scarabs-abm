@@ -12,12 +12,12 @@ class Yolo_detector():
         self.IOU_THRESHOLD = 0.5
 
         # the neural network configuration
-        config_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
+        config_path = r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\cfg\yolov3-custom.cfg"
         # the YOLO net weights file
-        weights_path = r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
+        weights_path = r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\backup\yolov3-custom_final.weights"
 
         # loading all the class labels (objects)
-        self.labels = open(r"F:\Git\MSc\CV_DL_Stuff\yolo_custom\next_attempt\darknet\data\obj.names").read(
+        self.labels = open(r"F:\Git\MSc\CV_DL\yolo_custom\next_attempt\darknet\data\obj.names").read(
         ).strip().split("\n")
         # generating colors for each object for later plotting
         # colors = np.random.randint(

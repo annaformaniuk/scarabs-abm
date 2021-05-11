@@ -137,6 +137,8 @@ dmypy.json
 *.png
 !blackwhite.png
 !model_calibrated_default.JPG
+!rmse_before_after.png
+!results_speed.png
 
 !results_calibrated.json
 !results_default.json

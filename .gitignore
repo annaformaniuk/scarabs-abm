@@ -137,6 +137,14 @@ dmypy.json
 *.png
 !blackwhite.png
 
+!results_calibrated.json
+!results_default.json
+!results_calibrated_default.json
+!results_calibrated_more_beetles.json
+!results_calibrated_more_obstacles.json
+!validation_trajectories_stats.json
+!calibration_trajectories_stats.json
+
 trajectory-extraction/contours/hed_model/
 
 calibration/data/

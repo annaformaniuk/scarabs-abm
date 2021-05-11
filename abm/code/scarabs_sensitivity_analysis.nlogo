@@ -28,6 +28,8 @@ globals [
   free-dance-probability
   obstacle-dance-probability
   average-headings
+  total-beetles
+  protonum-scale
 ]
 
 breed [beetles beetle]
@@ -107,17 +109,19 @@ to setup
   set total-mean-speed 0
   set total-distances-walked []
   set total-durations-walked []
-  set initial-dance-threshold 5
-  set deviation-dance-probability 5
+  set initial-dance-threshold 6
+  set deviation-dance-probability 8
   set free-dance-probability 5
-  set obstacle-dance-probability 5
+  set obstacle-dance-probability 10
   set average-headings []
+  set total-beetles 0
+  set protonum-scale 0.35
 end
 
 to setup-patches
   setup-terrain
-  setup-source
   setup-obstacles
+  setup-source
 end
 
 to setup-source
@@ -132,7 +136,12 @@ to setup-terrain
   ask patches with-max [pcolor] [set max-pcolor pcolor]
 
   ask patches [
-    set roughness (round ((pcolor / max-pcolor) * 10)) / 20
+     ifelse additional-obstacles [
+      set roughness (round ((pcolor / max-pcolor) * 10)) / 10
+    ] [
+      set roughness (round ((pcolor / max-pcolor) * 10)) / 20
+    ]
+
     set roughness roughness + random-float 0.1
 
     set pcolor scale-color black roughness 1.0 0.0
@@ -140,25 +149,33 @@ to setup-terrain
 end
 
 to setup-obstacles
-  ; option one
-  rectanglebase 50 55 55 10 black
-  ; option two
-  ask patches with [ pxcor <= -40 and pxcor > -100 and pycor < 100 and pycor >= 95 ]
-  [ set pcolor black
-  set roughness 1.0 ]
+  random-seed 42
+  let obstacles-count 0
+  ifelse additional-obstacles [
+    set obstacles-count 84
+  ] [
+    set obstacles-count 42
+  ]
+  repeat obstacles-count [
+    let random-x random-in-range min-pxcor max-pxcor
+    let random-y random-in-range min-pycor max-pycor
+    let random-width random-in-range 2 6
+    let random-height random-in-range 2 6
+    rectanglebase random-x random-y random-width random-height black
+  ]
+
 end
 
 to rectanglebase [x y w l c]
   ask patches with
-  [ w >= pxcor and pxcor >= x
+  [ w + x >= pxcor and pxcor >= x
     and
-    y >= pycor and pycor >= (- l + 2) ] [ set pcolor c
+    y + l >= pycor and pycor >= y ] [ set pcolor c
   set roughness 1.0]
 end
 
 to create-beetle ; beetle setup
   create-beetles 1 [
-    set size 10 ; size on the map
     set has-ball? false
     set color violet
     set ball-shaping-counter 0
@@ -169,22 +186,24 @@ to create-beetle ; beetle setup
     set walked-distance 0
     set course-deviation 0
     set pronotum-width ((random-in-range 10 21) / 10) ; to cm
+    set size (pronotum-width * 3) ; size on the map enlarged for visibility
     set heading-deviation-degrees 0
-    set starting-tick ticks
     set speeds-list []
     set headings-deviation-list []
     set max-deviation random-in-range 20 40
     set spatial-awareness random-in-range 1 10
     set current-obstacle-danced false
     set dances-count 0
-    set visible-beetles-radius random-in-range 20 30
-    set memory-level-threshold random-in-range 1000 2000
+    set visible-beetles-radius random-in-range 5 10
+    set memory-level-threshold random-in-range 1800 2000
     set memory-level 0
     set ball-rolling-duration 0
-    set minimum-dist-from-source random-in-range 80 100 ; in patches
-    set minimum-last-encounter-time random-in-range 25 35 ; in ticks
+    set minimum-dist-from-source random-in-range 30 32 ; in patches
+    set minimum-last-encounter-time random-in-range 3 6 ; in ticks
     set walking false
+    set current-speed 0
   ]
+  set total-beetles total-beetles + 1
 end
 
 ;;;;;;;;;;;;;;;;;;;;;
@@ -203,8 +222,8 @@ to go  ; forever button
   ]
 
   ; add beetles one at a time if there's 3 or less at the source
-  if (count beetles < beetles-number) and (beetles-at-source <= 2) [
-    if random 75 < 1 [
+  if (count beetles < beetles-number) and (beetles-at-source <= beetles-at-pile) [
+    if random 30 < 1 [
         create-beetle
       ]
     ]
@@ -214,10 +233,10 @@ to go  ; forever button
     ask beetles [
       ifelse not has-ball? [
         ifelse ball-rolling-duration = 0 [
-          let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
-          set ball-rolling-duration 60 - ((count visible-beetles) * 3)
-          if ball-rolling-duration < 30 [
-          set ball-rolling-duration 30]
+          let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ nested = false ]  ; picking beetles in visible radius
+          set ball-rolling-duration 540 - ((count visible-beetles) * 30)
+          if ball-rolling-duration < 120 [
+          set ball-rolling-duration 120]
       ] [
           roll-ball
       ] ] [
@@ -233,7 +252,7 @@ to go  ; forever button
       ]
   ]
     ; keeping track of the mean speed of all beetles
-    set total-mean-speed mean [current-speed] of beetles
+    if count beetles with [ current-speed > 0 ] > 0 [set total-mean-speed mean [current-speed] of beetles with [current-speed > 0]]
     ; showing headings histograms on the interface
     update-heading-plot
 
@@ -242,7 +261,7 @@ to go  ; forever button
     if count beetles with [nested = false and walking = true] > 0 [
       py:set "all_deviations" [ headings-deviation-list ] of beetles
       (py:run
-        "bins = np.arange(-360, 361, 30)"
+        "bins = np.arange(0, 361, 30)"
         "all_histograms = []"
         "#average_hist = []"
         "for deviation in all_deviations:"
@@ -283,7 +302,7 @@ to update-heading-plot
     create-temporary-plot-pen temp_string
     set-current-plot-pen temp_string
     set-plot-pen-mode 1
-    set-plot-y-range 0 500
+    ;set-plot-y-range 0 500
     set-plot-pen-interval 30
     set-plot-pen-color who
     histogram headings-deviation-list
@@ -293,8 +312,11 @@ end
 
 to roll-ball
   ifelse ball-shaping-counter < ball-rolling-duration [
-    if pcolor = red [
+    ifelse pcolor = red [
       set heading random 360
+      fd 1
+    ] [
+      facexy 0 0
       fd 1
     ]
     set ball-shaping-counter ball-shaping-counter + 1
@@ -302,12 +324,16 @@ to roll-ball
     if random 10 < 2 [
       let temp -1
       let rolling-temp ball-rolling-duration
+      ;show ball-rolling-duration
       hatch-balls 1 [
         set color magenta
-        set size 5
+        set size 2
         set ball-who who
         set temp who
-        set ball-roughness (1 - (rolling-temp / 60))
+        set ball-roughness (1 - (rolling-temp / 660))
+
+        ;show ball-roughness
+        ;show "done"
       ]
       set has-ball? true
       set ball-id temp
@@ -328,6 +354,7 @@ to establish-heading
       set memory-level 0
     ]
     set initial-dance-total initial-dance-total + 1
+    set starting-tick ticks
     let visible-beetles beetles in-radius (visible-beetles-radius * seen-radius-impact) with [ (heading-degrees > 0) and (nested = false) ]  ; picking beetles in visible radius
 
     ifelse count visible-beetles >= 1 [
@@ -386,7 +413,8 @@ to establish-heading
 end
 
 to wander  ;; turtle procedure
-  ifelse xcor = max-pxcor or xcor = min-pxcor or ycor = max-pycor or ycor = min-pycor [
+  ; 5 patches buffer around the world
+  ifelse (abs xcor) > ((abs max-pxcor) - 5) or (abs xcor) > ((abs min-pxcor) - 5) or (abs ycor) > ((abs max-pycor) - 5) or (abs ycor) > ((abs min-pycor) - 5) [
     ; nest if end of the world
     nest
   ] [
@@ -535,6 +563,7 @@ to wander  ;; turtle procedure
       ]
     ] [
       ; nest if far enough and haven't seen anyone for long enough
+      show minimum-dist-from-source
       nest
     ]
   ]
@@ -554,19 +583,19 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
   ask balls with [ball-who = beetles-ball] [
     set this-ball-roughness ball-roughness
   ]
-  let step-length pronotum-width * protonum-width-impact
+  let step-length pronotum-width * protonum-width-impact * protonum-scale
   let heading-adjusted (check-roughness #some-heading)
-  set heading-adjusted heading-adjusted + (random-prefix * 10 * this-ball-roughness)
+  set heading-adjusted heading-adjusted + (random-prefix * 100 * this-ball-roughness * ball-roughness-impact)
   let deviation-after heading-adjusted - #some-heading
   set heading heading-adjusted
   ask patch-ahead 1 [
-    set step-length step-length - (patch-roughness-impact * roughness) - (this-ball-roughness * ball-roughness-impact)
+    set step-length step-length - (patch-roughness-impact * roughness)
     if step-length < 0.1 [
     set step-length 0.1]
   ]
   fd step-length
   set walked-distance walked-distance + (step-length * patch-length)
-  set current-speed (step-length / tick-duration) * 10
+  set current-speed ((step-length * patch-length) / tick-duration)
   set speeds-list lput current-speed speeds-list
   set average-speed mean speeds-list
 
@@ -575,7 +604,7 @@ to push-ball [#some-heading #deviation-before] ; beetle and ball actually moving
     fd step-length
   ]
   let total-deviation #deviation-before + deviation-after
-  set headings-deviation-list lput total-deviation headings-deviation-list
+  set headings-deviation-list lput abs total-deviation headings-deviation-list
 end
 
 to nest
@@ -598,23 +627,28 @@ end
 to-report find-secondary-heading [#initial-heading]
   let other-heading 0
   let found-heading false
-  foreach [15 30 45 60 75 90 105 130 150 180 ]
+  foreach [15 30 45 60 75 90 105 130 150 180 200 230 250 280 310]
   [
     x ->
       if (found-heading = false) [
         if not obstacle? (#initial-heading - x) [
         set other-heading #initial-heading - x
+        set found-heading true
         report other-heading
       ]
       if found-heading = false [
         if not obstacle? (#initial-heading + x) [
-        set other-heading #initial-heading + x
-        report other-heading
+          set found-heading true
+          set other-heading #initial-heading + x
+          report other-heading
         ]
        ]
       ;report #initial-heading
      ]
-    ;report #initial-heading
+
+  ]
+  if found-heading = false [
+    report #initial-heading - 180
   ]
 end
 
@@ -627,7 +661,7 @@ to-report random-in-range [#low #high] ; random integer in given range
 end
 
 to-report source? ; patch reporter
-  report distancexy 0 0 < 7
+  report distancexy 0 0 < 4
 end
 
 to-report obstacle? [angle]  ; turtle procedure to see if patch ahead at some angle is an obstacle
@@ -637,10 +671,10 @@ end
 to-report check-roughness [angle]
   let clockwise angle + 30
   let counter-clockwise angle - 30
-  if ( [roughness] of patch-at-heading-and-distance clockwise 1 < [roughness] of patch-at-heading-and-distance angle 1) [
+  if ( [roughness * patch-roughness-impact] of patch-at-heading-and-distance clockwise 1 < [roughness * patch-roughness-impact] of patch-at-heading-and-distance angle 1) [
     report clockwise
   ]
-  ifelse ( [roughness] of patch-at-heading-and-distance counter-clockwise 1 < [roughness] of patch-at-heading-and-distance angle 1) [
+  ifelse ( [roughness * patch-roughness-impact] of patch-at-heading-and-distance counter-clockwise 1 < [roughness * patch-roughness-impact] of patch-at-heading-and-distance angle 1) [
     report counter-clockwise
   ] [
     report angle
@@ -658,24 +692,24 @@ end
 GRAPHICS-WINDOW
 587
 30
-1096
-540
+1090
+534
 -1
 -1
-1.0
+2.463
 1
 10
 1
 1
 1
 0
+0
+0
 1
-1
-1
--250
-250
--250
-250
+-100
+100
+-100
+100
 1
 1
 1
@@ -737,7 +771,7 @@ PLOT
 239
 366
 Cumulative average speed
-NIL
+Ticks
 Centimeters per second
 0.0
 15.0
@@ -755,7 +789,7 @@ PLOT
 26
 382
 241
-547
+595
 Heading-degrees
 Angle
 Frequency
@@ -791,14 +825,14 @@ PLOT
 287
 383
 517
-545
+596
 Heading-deviation
 Deviation angle
 Frequency
--360.0
+0.0
 360.0
 0.0
-500.0
+100.0
 true
 false
 "" ""
@@ -858,7 +892,7 @@ patch-roughness-impact
 patch-roughness-impact
 0
 10
-1.0
+2.0
 0.1
 1
 NIL
@@ -872,9 +906,9 @@ SLIDER
 protonum-width-impact
 protonum-width-impact
 0
-10
-0.35
-0.1
+3
+1.0
+0.05
 1
 NIL
 HORIZONTAL
@@ -888,7 +922,7 @@ ball-roughness-impact
 ball-roughness-impact
 0
 10
-1.0
+1.5
 0.1
 1
 NIL
@@ -903,7 +937,7 @@ distance-threshold-impact
 distance-threshold-impact
 0
 10
-1.0
+0.1
 0.1
 1
 NIL
@@ -933,7 +967,7 @@ seen-radius-impact
 seen-radius-impact
 0
 10
-1.0
+2.0
 0.1
 1
 NIL
@@ -1028,6 +1062,63 @@ free-dancing-probability-impact
 1
 NIL
 HORIZONTAL
+
+PLOT
+1128
+352
+1367
+538
+Cumulative dances count
+Seconds
+Count
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -8630108 true "" "if count beetles > 0 [plot max [dances-count] of beetles]"
+"pen-1" 1.0 0 -16777216 true "" "if count beetles > 0 [plot mean [dances-count] of beetles]"
+"pen-2" 1.0 0 -10649926 true "" "if count beetles > 0 [plot min [dances-count] of beetles]"
+
+MONITOR
+8
+105
+127
+150
+Beetles on the map
+total-beetles
+17
+1
+11
+
+SLIDER
+201
+105
+388
+138
+beetles-at-pile
+beetles-at-pile
+1
+10
+3.0
+1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+401
+106
+566
+139
+additional-obstacles
+additional-obstacles
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

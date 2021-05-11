@@ -58,7 +58,7 @@ def run_simulation(experiment, default=False):
     # Run for 8000 ticks and return the number of beetles and their mean speeds
 
     counts = netlogo.repeat_report(
-        ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 4000)
+        ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 2000)
 
     print('Done')
 

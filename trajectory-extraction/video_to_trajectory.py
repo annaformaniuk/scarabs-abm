@@ -40,6 +40,18 @@ def mask_out_objects(frame, objects):
 
     return masked_objects
 
+def black_border(im):
+    bordered = im.copy()
+    height, width = im.shape[:2]
+    for i in range(height):
+        for j in range(width):
+            if (i < 8 or i > height - 8):
+                bordered[i,j] = 0
+            else:
+                if (j < 8 or j > width - 8):
+                    bordered[i,j] = 0
+    return bordered
+
 
 def get_centroid(bounds):
     x = int((bounds[2] - bounds[0])/2 + bounds[0])
@@ -98,6 +110,7 @@ if (os.path.isfile(args["video_path"])):
                 background_mask_eroded = cv2.erode(
                     background_mask, kernel, iterations=3)
                 landscape = contours.detect_landscape(frame)
+                landscape = black_border(landscape)
                 landscapeReference = cv2.bitwise_and(
                     landscape, landscape, mask=background_mask_eroded)
 
@@ -126,6 +139,7 @@ if (os.path.isfile(args["video_path"])):
                 foreground_mask_eroded = cv2.erode(
                     foreground_mask, kernel, iterations=3)
                 landscape = contours.detect_landscape(frame)
+                landscape = black_border(landscape)
                 landscapeFront = cv2.bitwise_and(
                     landscape, landscape, mask=foreground_mask_eroded)
 

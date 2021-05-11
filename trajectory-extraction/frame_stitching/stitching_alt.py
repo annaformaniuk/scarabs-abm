@@ -159,10 +159,13 @@ def other_stitching(img1_color, img2_color, foreground_mask, background_mask, la
     # cv2.imshow('stitching result', test)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    cv2.imwrite(str(frame_index)+'stitched.png', test)
+    cv2.imwrite(str(frame_index)+'stitched_old.png', test)
+    cv2.imwrite(str(frame_index)+'stitched_landscape.png', landscape_dst)
+    cv2.imwrite(str(frame_index)+'stitched_landscape_last.png', ladscapeFront)
 
     new_centroids.append(new_centroid_dst)
     draw_trajectory(dst, new_centroids, frame_index)
+    
 
     return dst, overlay_mask, landscape_dst, new_centroids
 
@@ -212,16 +215,16 @@ def match_pairwise(img1_color, img2_color, foreground_mask, background_mask, lan
 
     # Find the homography matrix.
 
-    # homography, _ = cv2.estimateAffinePartial2D(p1, p2)
-    (homography, status) = cv2.findHomography(p1, p2, cv2.RANSAC, 4)
+    homography, _ = cv2.estimateAffinePartial2D(p1, p2)
+    # (homography, status) = cv2.findHomography(p1, p2, cv2.RANSAC, 4)
 
     # Use this matrix to transform the
     # colored image wrt the reference image.
-    transformed_img = cv2.warpPerspective(img1_color,
+    transformed_img = cv2.warpAffine(img1_color,
                                      homography, (width, height))
 
     to_transform = np.array([new_centroid], dtype=np.float32)
-    new_centroid_transformed = cv2.perspectiveTransform(
+    new_centroid_transformed = cv2.transform(
         to_transform[np.newaxis], homography)[0]
     new_centroid_tuple = (int(new_centroid_transformed[0][0]), int(
         new_centroid_transformed[0][1]))
@@ -232,7 +235,7 @@ def match_pairwise(img1_color, img2_color, foreground_mask, background_mask, lan
     # cv2.imshow('reference', img2_color)
     # cv2.imshow('matched image', test)
     # cv2.waitKey()
-    # cv2.destroyAllWindows
+    # cv2.destroyAllWindows()
 
     return transformed_img, new_centroid_tuple
 

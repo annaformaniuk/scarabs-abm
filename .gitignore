@@ -136,6 +136,7 @@ dmypy.json
 
 *.png
 !blackwhite.png
+!model_calibrated_default.JPG
 
 !results_calibrated.json
 !results_default.json

@@ -46,8 +46,6 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     default_heading = np.average(first_headings)
     print('default heading', default_heading)
 
-    # TODO handle circularity
-
     # Calculate deviations
     heading_deviations = np.subtract(headings, [default_heading]).astype(int)
     # same bins as in netlogo
@@ -55,12 +53,12 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     histogram = np.histogram(heading_deviations, bins=bins)
     print('histogram', histogram[0])
 
-    # return real_total_length, time_length, average_speed
     return speeds, real_total_length, time_length, histogram[0]
 
 
 def rmse(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
+
 
 def validate_stats(args):
     # first reading the model statistics
@@ -83,30 +81,23 @@ def validate_stats(args):
         traj_stats = None
         folder_items = os.listdir(args["input_trajectories"])
         trajectories = [fi for fi in folder_items if fi.endswith(".json")]
-        # print(trajectories)
 
         other_folder_items = os.listdir(args["calibration_trajectories"])
         calibration_trajectories = [
             fi for fi in other_folder_items if fi.endswith(".json")]
-        # print(calibration_trajectories)
-
-        # all_trajectories = trajectories.append(calibration_trajectories)
-        # print('total trajectories amount', len(all_trajectories))
 
         i = 0
 
         all_values = {
             'speeds': [],
-            # 'speed_means': [],
             'speed_stds': [],
             'distances': [],
-            # 'distances_means': [],
             'distances_stds': [],
             'durations': [],
-            # 'durations_means': [],
             'durations_stds': []
         }
 
+        # iterate through calibration trajectories needed for normalization
         while i < len(calibration_trajectories):
             with open(args["calibration_trajectories"] + "/" + calibration_trajectories[i]) as json_file:
                 data = json.load(json_file)
@@ -156,7 +147,7 @@ def validate_stats(args):
             'norm_headings': []
         }
 
-        # then loading and processing all the trajectories
+        # then loading and processing all the validation trajectories
         while i < len(trajectories):
             with open(args["input_trajectories"] + "/" + trajectories[i]) as json_file:
                 print('reading file', trajectories[i])
@@ -233,7 +224,6 @@ def validate_stats(args):
 
         print('here come the model stats', model_stats)
         print('and here come the real stats', traj_stats)
-        # print('trajectory stats for normalization are', all_values)
 
         # validating each result separately
         rmse_mean_speeds_norm = rmse(np.array(model_stats['mean_speeds']/all_values['mean_speeds']), np.array(
@@ -247,7 +237,8 @@ def validate_stats(args):
 
         rmse_obj['rmse_mean_speeds'] = rmse(np.array(model_stats['mean_speeds']), np.array(
             traj_stats['mean_speeds']))
-        print("rms error for real valies mean_speed is: " + str(rmse_obj['rmse_mean_speeds']))
+        print("rms error for real valies mean_speed is: " +
+              str(rmse_obj['rmse_mean_speeds']))
 
         # Normalizing stds by the mean value
         rmse_obj['rmse_std_speeds_norm'] = rmse(np.array(model_stats['std_speeds']/all_values['mean_speeds']), np.array(
@@ -257,49 +248,61 @@ def validate_stats(args):
 
         rmse_obj['rmse_std_speeds'] = rmse(np.array(model_stats['std_speeds']), np.array(
             traj_stats['std_speeds']))
-        print("rms error for real values std_speeds is: " + str(rmse_obj['rmse_std_speeds']))
+        print("rms error for real values std_speeds is: " +
+              str(rmse_obj['rmse_std_speeds']))
 
         rmse_obj['rmse_mean_dist_norm'] = rmse(np.array(model_stats['mean_dist']/all_values['mean_dist']), np.array(
             traj_stats['mean_dist']/all_values['mean_dist']))
-        print("rms error for normalized mean_dist is: " + str(rmse_obj['rmse_mean_dist_norm']))
+        print("rms error for normalized mean_dist is: " +
+              str(rmse_obj['rmse_mean_dist_norm']))
 
         rmse_obj['rmse_mean_dist'] = rmse(np.array(model_stats['mean_dist']), np.array(
             traj_stats['mean_dist']))
-        print("rms error for real values mean_dist is: " + str(rmse_obj['rmse_mean_dist']))
+        print("rms error for real values mean_dist is: " +
+              str(rmse_obj['rmse_mean_dist']))
 
         rmse_obj['rmse_std_dist_norm'] = rmse(
             np.array(model_stats['std_dist']/all_values['mean_dist']), np.array(traj_stats['std_dist']/all_values['mean_dist']))
-        print("rms error for normalized std_dist is: " + str(rmse_obj['rmse_std_dist_norm']))
+        print("rms error for normalized std_dist is: " +
+              str(rmse_obj['rmse_std_dist_norm']))
 
         rmse_obj['rmse_std_dist'] = rmse(
             np.array(model_stats['std_dist']), np.array(traj_stats['std_dist']))
-        print("rms error for real values std_dist is: " + str(rmse_obj['rmse_std_dist']))
+        print("rms error for real values std_dist is: " +
+              str(rmse_obj['rmse_std_dist']))
 
         rmse_obj['rmse_mean_time_norm'] = rmse(np.array(model_stats['mean_time']/all_values['mean_time']), np.array(
             traj_stats['mean_time']/all_values['mean_time']))
-        print("rms error for normalized mean_time is: " + str(rmse_obj['rmse_mean_time_norm']))
+        print("rms error for normalized mean_time is: " +
+              str(rmse_obj['rmse_mean_time_norm']))
 
         rmse_obj['rmse_mean_time'] = rmse(np.array(model_stats['mean_time']), np.array(
             traj_stats['mean_time']))
-        print("rms error for real values mean_time is: " + str(rmse_obj['rmse_mean_time']))
+        print("rms error for real values mean_time is: " +
+              str(rmse_obj['rmse_mean_time']))
 
         rmse_obj['rmse_std_time_norm'] = rmse(
             np.array(model_stats['std_time']/all_values['mean_time']), np.array(traj_stats['std_time']/all_values['mean_time']))
-        print("rms error for normalized std_time is: " + str(rmse_obj['rmse_std_time_norm']))
+        print("rms error for normalized std_time is: " +
+              str(rmse_obj['rmse_std_time_norm']))
 
         rmse_obj['rmse_std_time'] = rmse(
             np.array(model_stats['std_time']), np.array(traj_stats['std_time']))
-        print("rms error for real values std_time is: " + str(rmse_obj['rmse_std_time']))
+        print("rms error for real values std_time is: " +
+              str(rmse_obj['rmse_std_time']))
 
         rmse_obj['rmse_chisq_norm'] = rmse(
             np.array(model_stats['chisq_new']/traj_stats['chisq']), np.array(traj_stats['chisq']/traj_stats['chisq']))
-        print("rms error for normalized chisqis: " + str(rmse_obj['rmse_chisq_norm']))
+        print("rms error for normalized chisqis: " +
+              str(rmse_obj['rmse_chisq_norm']))
 
-        rmse_obj['rmse_chisq']=rmse(
+        rmse_obj['rmse_chisq'] = rmse(
             np.array(model_stats['chisq_new']), np.array(traj_stats['chisq']))
-        print("rms error for real values chisqis: " + str(rmse_obj['rmse_chisq']))
+        print("rms error for real values chisqis: " +
+              str(rmse_obj['rmse_chisq']))
 
-        rmse_obj['rmse_p']=rmse(np.array(model_stats['p_new']), np.array(traj_stats['p']))
+        rmse_obj['rmse_p'] = rmse(
+            np.array(model_stats['p_new']), np.array(traj_stats['p']))
         print("rms error for p is: " + str(rmse_obj['rmse_p']))
 
         return rmse_obj, model_stats, traj_stats, traj_full_stats
@@ -319,5 +322,3 @@ if __name__ == '__main__':
     print('args', args)
 
     results = validate_stats(args)
-
-    

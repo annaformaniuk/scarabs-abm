@@ -16,14 +16,12 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     lengths = np.sqrt(np.sum(np.diff(apts, axis=0)**2, axis=1))
     real_lengths = lengths * scale  # in cm
     real_total_length = np.sum(real_lengths)
-    # print('real length of trajectory', real_total_length, 'cm')
 
     # now the total duration
     times_array = np.array(times)
     times_array[0] = 0
     time_diffs = times_array[1:] - times_array[:-1]
     time_length = np.sum(time_diffs)  # in seconds
-    # print('duration of trajectory', time_length, 'seconds')
 
     # and the speeds
     speeds = np.divide(real_lengths, time_diffs)
@@ -41,21 +39,16 @@ def calculate_stats(pts, times, scale, displacement_vectors):
     headings = np.apply_along_axis(heading, 1, displacement_vectors_ar)
     headings = np.delete(headings, 0)
 
-    # find what heading the beetle chose (10 ?)
+    # find what heading the beetle chose
     first_headings = headings[:5]
     default_heading = np.average(first_headings)
-    # print('default heading', default_heading)
-
-    # TODO handle circularity
 
     # Calculate deviations
     heading_deviations = np.subtract(headings, [default_heading]).astype(int)
     # same bins as in netlogo
     bins = np.arange(0, 361, 30)
     histogram = np.histogram(heading_deviations, bins=bins)
-    # print('histogram', histogram[0])
 
-    # return real_total_length, time_length, average_speed
     return speeds, real_total_length, time_length, histogram[0]
 
 
@@ -67,7 +60,7 @@ if __name__ == '__main__':
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-model_stats_folder", "--model_stats_folder", required=True,
-                    help="path to model outputs that were ran with different parameters")
+                    help="path to model outputs that were run with different parameters")
     ap.add_argument("-validation_trajectories", "--validation_trajectories", required=True,
                     help="path to the trajectories that will be used for validation, needed for normalization")
     ap.add_argument("-calibration_trajectories", "--calibration_trajectories", required=True,
@@ -84,8 +77,6 @@ if __name__ == '__main__':
 
     i = 0
 
-    # print(len(model_stats_folder))
-
     while i < len(model_stats_folder)-1:
         # first reading the model statistics
         with open(args["model_stats_folder"] + "/" + model_stats[i]) as json_file:
@@ -94,13 +85,10 @@ if __name__ == '__main__':
             model_stats_dicts.append(model)
         i += 1
 
-    print('read all the model stats')
-
     calibration_stats = None
     calibration_items_folder = os.listdir(args["calibration_trajectories"])
     calibration_trajectories = [
         fi for fi in calibration_items_folder if fi.endswith(".json")]
-    # print(trajectories)
 
     validation_items_folder = os.listdir(args["validation_trajectories"])
     validation_trajectories = [
@@ -119,6 +107,7 @@ if __name__ == '__main__':
         'norm_headings': []
     }
 
+    # iterate through the validation trajectories
     while i < len(validation_trajectories):
         with open(args["validation_trajectories"] + "/" + validation_trajectories[i]) as json_file:
             data = json.load(json_file)
@@ -129,7 +118,6 @@ if __name__ == '__main__':
             ball_realsize = data['properties'][0]['ball_realsize']
             fps = data['properties'][0]['fps']
             scale = ball_realsize / ball_pixelsize
-            # print('scale', scale)
 
             for point in data['points']:
                 trajectory_list.append(point['point_coords'])
@@ -172,10 +160,9 @@ if __name__ == '__main__':
             'norm_headings': []
         }
 
-        # then loading and processing all the trajectories
+        # then loading and processing all the calibration trajectories
         while i < len(calibration_trajectories):
             with open(args["calibration_trajectories"] + "/" + calibration_trajectories[i]) as json_file:
-                # print('reading file', calibration_trajectories[i])
                 data = json.load(json_file)
                 trajectory_list = []
                 times_list = []
@@ -184,7 +171,6 @@ if __name__ == '__main__':
                 ball_realsize = data['properties'][0]['ball_realsize']
                 fps = data['properties'][0]['fps']
                 scale = ball_realsize / ball_pixelsize
-                # print('scale', scale)
 
                 for point in data['points']:
                     trajectory_list.append(point['point_coords'])
@@ -225,12 +211,8 @@ if __name__ == '__main__':
             average_hist = np.mean(
                 calibration_full_stats['headings'], axis=0)
 
-            # print('just average hist', average_hist)
-
             average_hist_norm = np.mean(
                 calibration_full_stats['norm_headings'], axis=0)
-
-            # print('just average_hist_norm', average_hist_norm)
 
             calibration_stats = {
                 'mean_speeds': np.mean(calibration_full_stats['speed_means']),
@@ -256,8 +238,6 @@ if __name__ == '__main__':
     all_values['chisq'] = chisquare(average_hist_all_norm)[0]
     all_values['p'] = chisquare(average_hist_all_norm)[1]
 
-    # print('here come the model stats', model_stats)
-
     # search for the smallest error
     for model_stats in model_stats_dicts:
         model_norm_values = np.array([
@@ -281,8 +261,6 @@ if __name__ == '__main__':
         ]
         )
 
-        # print('rmse inputs:', model_norm_values, trajectories_norm_values)
-
         rmse_total = rmse(model_norm_values, trajectories_norm_values)
         model_stats['rmse_total'] = rmse_total
 
@@ -294,6 +272,5 @@ if __name__ == '__main__':
     with open(filename, 'w') as f:
         json.dump(sorted_model_stats, f)
 
-    print('and here come the real stats', calibration_stats)
-    print('FINAL OUTPUT')
-    print(sorted_model_stats[0])
+    print('here come the real stats', calibration_stats)
+    print('here is the best result', sorted_model_stats[0])

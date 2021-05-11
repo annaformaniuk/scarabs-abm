@@ -55,7 +55,7 @@ def run_simulation(experiment, default=False):
 
         netlogo.command('setup')
 
-    # Run for 8000 ticks and return the number of beetles and their mean speeds
+    # Run for 2000 ticks and return the necessary state variables
 
     counts = netlogo.repeat_report(
         ['total-mean-speed', 'average-headings', 'total-distances-walked', 'total-durations-walked', 'initial-dance-percentage', 'deviation-dance-percentage', 'free-path-dance-percentage', 'obstacle-dance-percentage'], 2000)
@@ -92,7 +92,7 @@ def run_simulation(experiment, default=False):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
@@ -169,9 +169,9 @@ if __name__ == '__main__':
                 problem['std_time'][i][int(input_value)] = results['std_time']
 
     print('finished running!')
-    
+
     # Now all the plotting
-    
+
     # speed: 'total-mean-speed'
     # headings: 'average-headings'
     # distance-time: 'total-distances-walked', 'total-durations-walked'
@@ -218,14 +218,16 @@ if __name__ == '__main__':
     ax4.set_ylabel('Chisq')
     for i in range(len(headings_related)):
         name_index = problem['names'].index(headings_related[i])
-        ax4.plot(real_bounds, problem['chisq'][name_index], color=colors[i], label=headings_related[i])
+        ax4.plot(real_bounds, problem['chisq'][name_index],
+                 color=colors[i], label=headings_related[i])
     ax4.legend()
 
     ax5.set_xlabel('Multiplication factor')
     ax5.set_ylabel('P')
     for i in range(len(headings_related)):
         name_index = problem['names'].index(headings_related[i])
-        ax5.plot(real_bounds, problem['p'][name_index], color=colors[i], label=headings_related[i])
+        ax5.plot(real_bounds, problem['p'][name_index],
+                 color=colors[i], label=headings_related[i])
     ax5.legend()
 
     plt.show()
@@ -270,4 +272,3 @@ if __name__ == '__main__':
     ax9.legend()
 
     plt.show()
-

@@ -50,7 +50,7 @@ def run_simulation(experiment):
             netlogo.command('set {0} {1}'.format(key, value))
 
     netlogo.command('setup')
-    # Run for 1000 ticks and return the number of beetles and their mean speeds
+    # Run for 6000 ticks
     counts = netlogo.repeat_report(
         ['total-distances-walked', 'total-durations-walked'], 6000)
 
@@ -71,7 +71,7 @@ def run_simulation(experiment):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
@@ -89,22 +89,7 @@ if __name__ == '__main__':
         'std_time': [[], [], [], [], []]
     }
 
-    # with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
-    # results = []
-    # for entry in executor.map(run_simulation, experiments.to_dict('records')):
-    #     results.append(entry)
-    # results = pd.DataFrame(results)
-
     for i in range(len(problem['names'])):
-        # for value in problem['bounds']:
-        #     netlogo.load_model(modelfile)
-        #     experiment = {problem['names'][i]: value}
-        #     mean_dist, std_dist, mean_time, std_time = run_simulation(experiment)
-
-        #     problem['mean_dist'][i].append(mean_dist)
-        #     problem['std_dist'][i].append(std_dist)
-        #     problem['mean_time'][i].append(mean_time)
-        #     problem['std_time'][i].append(std_time)
         with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
             experiments = pd.DataFrame(problem['bounds'],
                                        columns=[problem['names'][i]])

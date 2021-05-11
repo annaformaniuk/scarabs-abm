@@ -49,7 +49,7 @@ def run_simulation(experiment):
             netlogo.command('set {0} {1}'.format(key, value))
 
     netlogo.command('setup')
-    # Run for 1000 ticks and return the number of beetles and their mean speeds
+    # Run for 6000 ticks
     counts = netlogo.repeat_report(['initial-dance-percentage', 'deviation-dance-percentage',
                                     'free-path-dance-percentage', 'obstacle-dance-percentage'], 6000)
 
@@ -67,7 +67,7 @@ def run_simulation(experiment):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
@@ -84,23 +84,7 @@ if __name__ == '__main__':
         'free_dancing': [[], [], [], [], []]
     }
 
-    # with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
-    # results = []
-    # for entry in executor.map(run_simulation, experiments.to_dict('records')):
-    #     results.append(entry)
-    # results = pd.DataFrame(results)
-
     for i in range(len(problem['names'])):
-        # for value in problem['bounds']:
-        #     netlogo.load_model(modelfile)
-        #     experiment = {problem['names'][i]: value}
-        #     initial, deviation, obstacle, free = run_simulation(
-        #         experiment)
-
-        #     problem['initial_dancing'][i].append(initial)
-        #     problem['deviation_dancing'][i].append(deviation)
-        #     problem['obstacle_dancing'][i].append(obstacle)
-        #     problem['free_dancing'][i].append(free)
         with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
             experiments = pd.DataFrame(problem['bounds'],
                                        columns=[problem['names'][i]])

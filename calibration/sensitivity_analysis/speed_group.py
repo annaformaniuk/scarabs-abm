@@ -6,22 +6,24 @@ from multiprocessing import Pool
 
 import pyNetLogo
 
+
 def initializer(modelfile):
     '''initialize a subprocess
-    
+
     Parameters
     ----------
     modelfile : str
-    
+
     '''
-    
+
     # we need to set the instantiated netlogo
     # link as a global so run_simulation can
     # use it
     global netlogo
-    
+
     netlogo = pyNetLogo.NetLogoLink(gui=False)
     netlogo.load_model(modelfile)
+
 
 def run_simulation(experiment):
     '''run a netlogo model
@@ -47,9 +49,9 @@ def run_simulation(experiment):
             netlogo.command('set {0} {1}'.format(key, value))
 
     netlogo.command('setup')
-    # Run for 1000 ticks and return the number of beetles and their mean speeds
+    # Run for 6000 ticks and return the number of beetles and their mean speeds
     counts = netlogo.repeat_report(
-        ['total-mean-speed'], 1000)
+        ['total-mean-speed'], 6000)
 
     print('Done')
 
@@ -63,11 +65,9 @@ def run_simulation(experiment):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
-    # netlogo = pyNetLogo.NetLogoLink(gui=False)
-
-    bounds = np.arange(0, 2.0, 0.2)
+    bounds = np.arange(0.5, 2.1, 0.5)
 
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 
@@ -79,23 +79,16 @@ if __name__ == '__main__':
     }
 
     for i in range(len(problem['names'])):
-    #     for value in problem['bounds']:
-    #         netlogo.load_model(modelfile)
-    #         experiment = {problem['names'][i]: value}
-    #         mean, std = run_simulation(experiment)
-
-    #         problem['speeds'][i].append(mean)
-    #         problem['stds'][i].append(std)
-
         with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
             experiments = pd.DataFrame(problem['bounds'],
-                               columns=[problem['names'][i]])
+                                       columns=[problem['names'][i]])
             # placeholders
             result_speeds = np.empty_like(problem['bounds'])
             result_stds = np.empty_like(problem['bounds'])
             for input_value, speed, std in executor.map(run_simulation, experiments.to_dict('records')):
                 print("receiving", input_value, speed, std)
-                current_index = np.where(problem['bounds']==input_value)[0][0]
+                current_index = np.where(
+                    problem['bounds'] == input_value)[0][0]
                 print(current_index)
                 result_speeds[current_index] = speed
                 result_stds[current_index] = std

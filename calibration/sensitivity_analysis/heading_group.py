@@ -7,22 +7,24 @@ from scipy.stats import chisquare
 
 import pyNetLogo
 
+
 def initializer(modelfile):
     '''initialize a subprocess
-    
+
     Parameters
     ----------
     modelfile : str
-    
+
     '''
-    
+
     # we need to set the instantiated netlogo
     # link as a global so run_simulation can
     # use it
     global netlogo
-    
+
     netlogo = pyNetLogo.NetLogoLink(gui=False)
     netlogo.load_model(modelfile)
+
 
 def run_simulation(experiment):
     '''run a netlogo model
@@ -49,9 +51,9 @@ def run_simulation(experiment):
             netlogo.command('set {0} {1}'.format(key, value))
 
     netlogo.command('setup')
-    # Run for 1000 ticks and return the number of beetles and their mean speeds
+    # Run for 6000 ticks
     counts = netlogo.repeat_report(
-        ['average-headings'], 1000)
+        ['average-headings'], 6000)
 
     print('Done')
     last_state_headings = counts['average-headings'].iloc[-1]
@@ -65,7 +67,7 @@ def run_simulation(experiment):
 
 if __name__ == '__main__':
     modelfile = os.path.abspath(
-        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_sensitivity_analysis.nlogo')
+        r'F:\Dokumente\Uni_Msc\Thesis\repo\scarabs-abm\abm\code\scarabs_abm.nlogo')
 
     netlogo = pyNetLogo.NetLogoLink(gui=False)
 
@@ -81,22 +83,16 @@ if __name__ == '__main__':
     }
 
     for i in range(len(problem['names'])):
-        # for value in problem['bounds']:
-        #     netlogo.load_model(modelfile)
-        #     experiment = {problem['names'][i]: value}
-        #     saved_value, chisq, p = run_simulation(experiment)
-
-        #     problem['chisq'][i].append(chisq)
-        #     problem['p'][i].append(p)
         with Pool(4, initializer=initializer, initargs=(modelfile,)) as executor:
             experiments = pd.DataFrame(problem['bounds'],
-                               columns=[problem['names'][i]])
+                                       columns=[problem['names'][i]])
             # placeholders
             result_chisq = np.empty_like(problem['bounds'])
             result_p = np.empty_like(problem['bounds'])
             for input_value, chisq, p in executor.map(run_simulation, experiments.to_dict('records')):
                 print("receiving", input_value, chisq, p)
-                current_index = np.where(problem['bounds']==input_value)[0][0]
+                current_index = np.where(
+                    problem['bounds'] == input_value)[0][0]
                 print(current_index)
                 result_chisq[current_index] = chisq
                 result_p[current_index] = p
@@ -111,7 +107,8 @@ if __name__ == '__main__':
 
     # ax.set_ylim([0,20])
     for i in range(len(problem['names'])):
-        ax1.plot(problem['bounds'], problem['chisq'][i], color=colors[i], label=problem['names'][i])
+        ax1.plot(problem['bounds'], problem['chisq'][i],
+                 color=colors[i], label=problem['names'][i])
     ax1.legend()
 
     ax2.set_xlabel('Multiplication factor')
@@ -119,7 +116,8 @@ if __name__ == '__main__':
 
     # ax.set_ylim([0,20])
     for i in range(len(problem['names'])):
-        ax2.plot(problem['bounds'], problem['p'][i], color=colors[i], label=problem['names'][i])
+        ax2.plot(problem['bounds'], problem['p'][i],
+                 color=colors[i], label=problem['names'][i])
     ax2.legend()
 
     plt.show()

@@ -27,6 +27,9 @@ def calculate_stats(pts, times, scale, displacement_vectors):
 
     # and the speeds
     speeds = np.divide(real_lengths, time_diffs)
+    # extreme_speeds = [x for x in speeds if x > 30]
+    # if (len(extreme_speeds) > 0):
+    #     print(speeds)
 
     # and the headings
     displacement_vectors_ar = np.array(displacement_vectors)
@@ -100,6 +103,7 @@ def validate_stats(args):
         # iterate through calibration trajectories needed for normalization
         while i < len(calibration_trajectories):
             with open(args["calibration_trajectories"] + "/" + calibration_trajectories[i]) as json_file:
+                print('reading', calibration_trajectories[i])
                 data = json.load(json_file)
                 trajectory_list = []
                 times_list = []
@@ -186,7 +190,7 @@ def validate_stats(args):
                 speeds_temp = all_values['speeds']
                 np.concatenate([np.array(speeds_temp), np.array(speeds)])
 
-                all_values['speeds'] = speeds_temp
+                all_values['speeds'] = np.append(all_values['speeds'], speeds_temp)
                 all_values['speed_stds'].append(np.std(speeds))
                 all_values['distances'].append(real_total_length)
                 all_values['durations'].append(time_length)
@@ -213,7 +217,10 @@ def validate_stats(args):
                 'heading_deviations': average_hist,
                 'heading_deviations_norm': average_his_norm,
                 'chisq': chisquare(average_his_norm)[0],
-                'p': chisquare(average_his_norm)[1]
+                'p': chisquare(average_his_norm)[1],
+                'speeds': traj_full_stats['speeds'],
+                'distances': traj_full_stats['distances'],
+                'durations': traj_full_stats['durations']
             }
 
         # now compute means for normalization

@@ -186,78 +186,100 @@ if __name__ == '__main__':
         more_beetles_model_stds.append(round(results_beetles[name], 1))
         more_obstacles_model_stds.append(round(results_obstacles[name], 1))
 
+    fig2, axs2 = plt.subplots(1, 2, sharey=True)
+    fig2.suptitle(
+        'Results of default model and model with more obstacles for journey durations', fontsize=26)
+    axs2[0].errorbar(['Duration (default model)'], [calibrated_model_params[2]], [
+                     calibrated_model_stds[2]], fmt='ok')
+    axs2[1].errorbar(['Duration (more obstacles)'], [more_obstacles_model_params[2]], [
+                     more_obstacles_model_stds[2]], fmt='ok')
+    axs2[0].set_ylabel('seconds', fontsize=16)
+    axs2[1].set_ylabel('seconds', fontsize=16)
+
+    plt.show()
+    
     fig3, axs3 = plt.subplots(1, 2, sharey=True)
     fig3.suptitle(
-        'Results of heading histograms for default model and model with more beetles')
+        'Results of heading deviation histograms for default model and model with more beetles', fontsize=18)
     axs3[0].bar(bins_strings[1:], calibrated_model_params[3])
+    axs3[0].set_xlabel('Heading deviations (default model)', fontsize=16)
+    axs3[0].set_ylabel('Percentage', fontsize=16)
     axs3[1].bar(bins_strings[1:], more_beetles_model_params[3])
+    axs3[1].set_xlabel('Heading deviations (more beetles)', fontsize=16)
+    axs3[1].set_ylabel('Percentage', fontsize=16)
 
     plt.show()
 
     fig4, axs4 = plt.subplots(1, 2, sharey=True)
     fig4.suptitle(
-        'Results of heading histograms for default model and model with more obstacles')
+        'Results of heading deviation histograms for default model and model with more obstacles', fontsize=18)
     axs4[0].bar(bins_strings[1:], calibrated_model_params[3])
+    axs4[0].set_xlabel('Heading deviations (default model)', fontsize=16)
+    axs4[0].set_ylabel('Percentage', fontsize=16)
     axs4[1].bar(bins_strings[1:], more_obstacles_model_params[3])
+    axs4[1].set_xlabel('Heading deviations (more obstacles)', fontsize=16)
+    axs4[1].set_ylabel('Percentage', fontsize=16)
 
     plt.show()
 
     fig0, axs0 = plt.subplots(1, 2, sharey=True)
     fig0.suptitle(
-        'Results of default model and model with more beetles for speed')
-    axs0[0].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [
+        'Results of default model and model with more beetles for speed', fontsize=26)
+    axs0[0].errorbar(['Speed (default model)'], [calibrated_model_params[0]], [
                      calibrated_model_stds[0]], fmt='ok')
-    axs0[1].errorbar([params_visualisation[0]], [more_beetles_model_params[0]], [
-                     more_obstacles_model_stds[0]], fmt='ok')
+    axs0[1].errorbar(['Speed (more beetles)'], [more_beetles_model_params[0]], [
+                     more_beetles_model_stds[0]], fmt='ok')
+    axs0[0].set_ylabel('centimeters/second', fontsize=16)
+    axs0[1].set_ylabel('centimeters/second', fontsize=16)
 
     plt.show()
 
     fig1, axs1 = plt.subplots(1, 2, sharey=True)
     fig1.suptitle(
-        'Results of default model and model with more beetles for distances')
-    axs1[0].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [
+        'Results of default model and model with more beetles for travelled distances', fontsize=26)
+    axs1[0].errorbar(['Distance (default model)'], [calibrated_model_params[1]], [
                      calibrated_model_stds[1]], fmt='ok')
-    axs1[1].errorbar([params_visualisation[1]], [more_beetles_model_params[1]], [
-                     more_obstacles_model_stds[1]], fmt='ok')
+    axs1[1].errorbar(['Distance (more beetles)'], [more_beetles_model_params[1]], [
+                     more_beetles_model_stds[1]], fmt='ok')
+    axs1[0].set_ylabel('centimeters', fontsize=16)
+    axs1[1].set_ylabel('centimeters', fontsize=16)
 
     plt.show()
 
     fig2, axs2 = plt.subplots(1, 2, sharey=True)
     fig2.suptitle(
-        'Results of default model and model with more beetles for times')
-    axs2[0].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [
+        'Results of default model and model with more beetles for journey durations', fontsize=26)
+    axs2[0].errorbar(['Duration (default model)'], [calibrated_model_params[2]], [
                      calibrated_model_stds[2]], fmt='ok')
-    axs2[1].errorbar([params_visualisation[2]], [more_beetles_model_params[2]], [
-                     more_obstacles_model_stds[2]], fmt='ok')
+    axs2[1].errorbar(['Duration (more beetles)'], [more_beetles_model_params[2]], [
+                     more_beetles_model_stds[2]], fmt='ok')
+    axs2[0].set_ylabel('seconds', fontsize=16)
+    axs2[1].set_ylabel('seconds', fontsize=16)
 
     plt.show()
 
     fig0, axs0 = plt.subplots(1, 2, sharey=True)
     fig0.suptitle(
-        'Results of default model and model with more obstacles for speed')
-    axs0[0].errorbar([params_visualisation[0]], [calibrated_model_params[0]], [
+        'Results of default model and model with more obstacles for speed', fontsize=26)
+    axs0[0].errorbar(['Speed (default model)'], [calibrated_model_params[0]], [
                      calibrated_model_stds[0]], fmt='ok')
-    axs0[1].errorbar([params_visualisation[0]], [more_obstacles_model_params[0]], [
+    axs0[1].errorbar(['Speed (more beetles)'], [more_obstacles_model_params[0]], [
                      more_obstacles_model_stds[0]], fmt='ok')
+    axs0[0].set_ylabel('centimeters/second', fontsize=16)
+    axs0[1].set_ylabel('centimeters/second', fontsize=16)
 
     plt.show()
 
     fig1, axs1 = plt.subplots(1, 2, sharey=True)
     fig1.suptitle(
-        'Results of default model and model with more obstacles for distances')
-    axs1[0].errorbar([params_visualisation[1]], [calibrated_model_params[1]], [
+        'Results of default model and model with more obstacles for travelled distances', fontsize=26)
+    axs1[0].errorbar(['Distance (default model)'], [calibrated_model_params[1]], [
                      calibrated_model_stds[1]], fmt='ok')
-    axs1[1].errorbar([params_visualisation[1]], [more_obstacles_model_params[1]], [
+    axs1[1].errorbar(['Distance (more obstacles)'], [more_obstacles_model_params[1]], [
                      more_obstacles_model_stds[1]], fmt='ok')
+    axs1[0].set_ylabel('centimeters', fontsize=16)
+    axs1[1].set_ylabel('centimeters', fontsize=16)
 
     plt.show()
 
-    fig2, axs2 = plt.subplots(1, 2, sharey=True)
-    fig2.suptitle(
-        'Results of default model and model with more obstacles for times')
-    axs2[0].errorbar([params_visualisation[2]], [calibrated_model_params[2]], [
-                     calibrated_model_stds[2]], fmt='ok')
-    axs2[1].errorbar([params_visualisation[2]], [more_obstacles_model_params[2]], [
-                     more_obstacles_model_stds[2]], fmt='ok')
-
-    plt.show()
+    

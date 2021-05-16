@@ -1037,7 +1037,7 @@ obstacle-dancing-probability-impact
 obstacle-dancing-probability-impact
 0
 10
-1.1
+1.0
 0.1
 1
 NIL

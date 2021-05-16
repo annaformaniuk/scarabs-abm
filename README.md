@@ -103,6 +103,7 @@ Creates a json from the displacement vector between beetle object detected in vi
 - and what the mean values and their standard deviations are for the models
 ![speed results](https://github.com/annaformaniuk/scarabs-abm/blob/develop/images/Complete_distances.png "Speed results")
 
+
 - `validation/scenarios_stats.py` also similarly analyses scenarios of how beetles behave when there's more of them present at the dung pile at the same time, and when there are additional obstacles created in the NetLogo world.
 
 License
